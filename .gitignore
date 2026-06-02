@@ -21,6 +21,7 @@
 !*.yml
 !*.yaml
 !*.conf
+!*.cfg
 !*.md
 !*.txt
 !**/Dockerfile
