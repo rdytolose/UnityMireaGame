@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Итог — Cashier &amp; Doom</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <pre class="ascii">   .-"""-.
+  / .---. \
+  | |x x| |
+  \  \^/  /
+   '-...-'</pre>
+    </div>
+
+    <h1 id="title" class="center" style="font-size:42px; margin:6px 0;">—</h1>
+    <p class="muted center" id="sub">Смена окончена</p>
+    <p class="muted center" id="hint" style="margin-top:14px;">Возврат на главный экран…</p>
+
+    <a href="index.html"><button class="primary">На главную</button></a>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const r = (getQueryParam("r") || "lose").toLowerCase();
+    const MAP = {
+      win:  { title: "ПОБЕДА",          sub: "Ты пережил смену!" },
+      lose: { title: "ПОРАЖЕНИЕ",       sub: "Тебя достали…" },
+      quit: { title: "СМЕНА ПРЕРВАНА",  sub: "Ты ушёл со смены" },
+    };
+    const m = MAP[r] || MAP.lose;
+    document.getElementById("title").textContent = m.title;
+    document.getElementById("sub").textContent = m.sub;
+
+    // Игра окончена — телефон отвязываем и возвращаем на стартовый экран.
+    clearToken();
+    setTimeout(() => { window.location.href = "index.html"; }, 4000);
+  </script>
+</body>
+</html>

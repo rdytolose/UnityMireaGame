@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Cashier &amp; Doom</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Админке нужен широкий layout — переопределяем центрированную карточку. */
+    body { display: block; align-items: stretch; padding: 24px; }
+    .admin { max-width: 1100px; margin: 0 auto; }
+    h2 { color: var(--accent-2); border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+    .box { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 16px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    th { color: var(--muted); font-weight: 600; }
+    input, select, textarea { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 6px 8px; font: inherit; }
+    input[type=number] { width: 100px; }
+    button { cursor: pointer; }
+    button.mini { padding: 5px 10px; font-size: 15px; border-radius: 0; border: 2px solid var(--border); background: #000; color: var(--text); text-transform: uppercase; }
+    button.mini:hover { background: var(--text); color: #000; border-color: var(--text); }
+    .chip { display: inline-block; background: var(--panel-2); border: 1px solid var(--border); border-radius: 20px; padding: 2px 10px; margin: 2px; font-size: 12px; }
+    .chip b { cursor: pointer; color: var(--err); margin-left: 6px; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .muted { color: var(--muted); }
+    .msg { margin: 10px 0; min-height: 20px; }
+    .msg.ok { color: var(--ok); }
+    .msg.err { color: var(--err); }
+    textarea { width: 100%; min-height: 160px; font-family: monospace; }
+    #panel { display: none; }
+  </style>
+</head>
+<body>
+  <div class="admin">
+    <h1>🛠️ Admin <span style="color:var(--accent)">Cashier &amp; Doom</span></h1>
+
+    <!-- Логин по ключу -->
+    <div class="box" id="login">
+      <div class="row">
+        <input id="keyInput" type="password" placeholder="Admin key" style="flex:1;min-width:200px" />
+        <button class="mini" onclick="login()">Войти</button>
+      </div>
+      <div class="msg" id="loginMsg"></div>
+    </div>
+
+    <div id="panel">
+      <div class="msg" id="msg"></div>
+
+      <!-- Игроки -->
+      <div class="box">
+        <h2>Игроки <button class="mini" onclick="loadPlayers()">⟳ Обновить</button></h2>
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Игрок</th><th>Деньги</th><th>Уровень</th><th>Оружие</th><th>Предметы</th><th></th></tr>
+          </thead>
+          <tbody id="players"></tbody>
+        </table>
+      </div>
+
+      <!-- Экономика -->
+      <div class="box">
+        <h2>Экономика</h2>
+        <p class="muted">Очки за обслуживание (сервер). Минус = штраф.</p>
+        <div id="economy" class="row"></div>
+        <div style="margin-top:12px"><button class="mini" onclick="saveEconomy()">💾 Сохранить экономику</button></div>
+      </div>
+
+      <!-- Сложность -->
+      <div class="box">
+        <h2>Сложность по уровням</h2>
+        <p class="muted">Текущие значения (с учётом оверрайдов). Чтобы переопределить — впиши JSON ниже,
+          напр. <code>{"3":{"shooter":{"survival_time":120}},"1":{"shop":{"bad_chance":0.5}}}</code></p>
+        <div style="overflow:auto"><table id="levels"></table></div>
+        <h3 style="color:var(--muted)">Оверрайды (JSON)</h3>
+        <textarea id="overrides" spellcheck="false"></textarea>
+        <div style="margin-top:10px" class="row">
+          <button class="mini" onclick="saveOverrides()">💾 Сохранить оверрайды</button>
+          <button class="mini" onclick="clearOverrides()">Очистить всё</button>
+        </div>
+      </div>
+
+      <!-- Матвопросы в чате doom -->
+      <div class="box">
+        <h2>Матвопросы в чате (doom)</h2>
+        <p class="muted">Пусто → игра сама генерит арифметику. Есть вопросы → берёт случайный из списка.
+          Отметь точкой правильный вариант.</p>
+        <div id="mathList"></div>
+        <div class="row" style="margin-top:10px">
+          <button class="mini" onclick="addMathRow()">+ Вопрос</button>
+          <button class="mini" onclick="saveMath()">💾 Сохранить вопросы</button>
+        </div>
+      </div>
+
+      <!-- Диалоги (чат на телефоне) -->
+      <div class="box">
+        <h2>Диалоги (чат на телефоне)</h2>
+        <p class="muted">Одна строка = реплика пацана: <code>текст | ответ1 | ответ2</code>.
+          Строка <code>MATH</code> вставляет арифм. вопрос из пула.
+          <b>intro</b> — после линка (перед doom), <b>doom_to_shop</b> — переход в магазин.</p>
+        <div id="dialogues"></div>
+        <div class="row" style="margin-top:10px">
+          <button class="mini" onclick="saveDialogues()">💾 Сохранить диалоги</button>
+        </div>
+      </div>
+
+      <!-- Параметры оружия -->
+      <div class="box">
+        <h2>Оружие (урон / скорострельность)</h2>
+        <p class="muted">Урон — за выстрел. Скорострельность — пауза между выстрелами в секундах
+          (меньше = быстрее: автомат ~0.08, пистолет ~0.3, дробовик ~0.8). Влияет на игрока со след. рейда.</p>
+        <table>
+          <thead><tr><th>Оружие</th><th>Урон</th><th>Скорострельность</th></tr></thead>
+          <tbody id="weapons"></tbody>
+        </table>
+        <div class="row" style="margin-top:10px">
+          <button class="mini" onclick="saveWeapons()">💾 Сохранить оружие</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    const API_BASE = (window.API_BASE || "").replace(/\/$/, "");
+    const KEY = "cd_admin_key";
+    const getKey = () => localStorage.getItem(KEY) || "";
+
+    let CFG = null; // последний конфиг (items, economy, levels...)
+
+    async function adm(path, { method = "GET", body } = {}) {
+      const res = await fetch(API_BASE + path, {
+        method,
+        headers: { "Content-Type": "application/json", "X-Admin-Key": getKey() },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      let d = null; try { d = await res.json(); } catch (_) {}
+      if (!res.ok) throw new Error((d && (d.detail || d.message)) || ("Error " + res.status));
+      return d;
+    }
+
+    function msg(t, kind) { const m = $("msg"); m.textContent = t || ""; m.className = "msg" + (kind ? " " + kind : ""); }
+    const $ = (id) => document.getElementById(id);
+
+    async function login() {
+      localStorage.setItem(KEY, $("keyInput").value.trim());
+      try {
+        await adm("/api/admin/ping");
+        $("login").style.display = "none";
+        $("panel").style.display = "block";
+        await loadConfig();
+        await loadPlayers();
+      } catch (e) {
+        $("loginMsg").textContent = "Неверный ключ: " + e.message;
+        $("loginMsg").className = "msg err";
+      }
+    }
+
+    // ---- игроки ----
+    async function loadPlayers() {
+      const data = await adm("/api/admin/players");
+      const weapons = (CFG?.items || []).filter(i => i.type === "weapon");
+      const perks = (CFG?.items || []).filter(i => i.type === "perk");
+      const allItems = CFG?.items || [];
+      const tb = $("players");
+      tb.innerHTML = "";
+      for (const p of data.players) {
+        const tr = document.createElement("tr");
+        const wopts = weapons.map(w => `<option value="${w.id}" ${w.id === p.equipped_weapon ? "selected" : ""}>${w.name}</option>`).join("");
+        const chips = p.items.map(id => `<span class="chip">${id}<b onclick="removeItem(${p.user_id},'${id}')">✕</b></span>`).join("");
+        const addOpts = allItems.filter(i => !p.items.includes(i.id)).map(i => `<option value="${i.id}">+ ${i.name}</option>`).join("");
+        tr.innerHTML = `
+          <td>${p.user_id}</td>
+          <td>${p.username}<br><span class="muted" style="font-size:11px">${p.email}</span></td>
+          <td>
+            <input type="number" id="money_${p.user_id}" value="${p.money}" />
+            <button class="mini" onclick="setMoney(${p.user_id})">=</button>
+            <button class="mini" onclick="addMoney(${p.user_id},1000)">+1k</button>
+          </td>
+          <td>
+            <input type="number" id="lvl_${p.user_id}" value="${p.current_level}" style="width:60px" />/${p.highest_level}
+            <button class="mini" onclick="setLevel(${p.user_id})">=</button>
+          </td>
+          <td><select onchange="setWeapon(${p.user_id}, this.value)">${wopts}</select></td>
+          <td>${chips}<br><select onchange="if(this.value)addItem(${p.user_id}, this.value)"><option value="">добавить…</option>${addOpts}</select></td>
+          <td><button class="mini" onclick="resetPlayer(${p.user_id})">Сброс</button></td>`;
+        tb.appendChild(tr);
+      }
+    }
+
+    async function setMoney(id) { await patchMoney(id, +$("money_" + id).value, "set"); }
+    async function addMoney(id, amt) { await patchMoney(id, amt, "add"); }
+    async function patchMoney(id, amount, mode) {
+      try { await adm(`/api/admin/players/${id}/money`, { method: "POST", body: { amount, mode } }); msg("Деньги обновлены", "ok"); loadPlayers(); }
+      catch (e) { msg(e.message, "err"); }
+    }
+    async function setLevel(id) {
+      try { await adm(`/api/admin/players/${id}`, { method: "PATCH", body: { current_level: +$("lvl_" + id).value } }); msg("Уровень обновлён", "ok"); loadPlayers(); }
+      catch (e) { msg(e.message, "err"); }
+    }
+    async function setWeapon(id, w) {
+      try { await adm(`/api/admin/players/${id}`, { method: "PATCH", body: { equipped_weapon: w } }); msg("Оружие: " + w, "ok"); }
+      catch (e) { msg(e.message, "err"); }
+    }
+    async function addItem(id, item) {
+      try { await adm(`/api/admin/players/${id}/items`, { method: "POST", body: { item_id: item, action: "add" } }); msg("Выдан: " + item, "ok"); loadPlayers(); }
+      catch (e) { msg(e.message, "err"); }
+    }
+    async function removeItem(id, item) {
+      try { await adm(`/api/admin/players/${id}/items`, { method: "POST", body: { item_id: item, action: "remove" } }); msg("Убран: " + item, "ok"); loadPlayers(); }
+      catch (e) { msg(e.message, "err"); }
+    }
+    async function resetPlayer(id) {
+      if (!confirm("Сбросить игрока #" + id + "? (деньги/уровень/предметы/приметы)")) return;
+      try { await adm(`/api/admin/players/${id}/reset`, { method: "POST" }); msg("Игрок сброшен", "ok"); loadPlayers(); }
+      catch (e) { msg(e.message, "err"); }
+    }
+
+    // ---- конфиг ----
+    async function loadConfig() {
+      CFG = await adm("/api/admin/config");
+      // экономика
+      const eco = $("economy"); eco.innerHTML = "";
+      for (const [k, v] of Object.entries(CFG.economy)) {
+        const wrap = document.createElement("label");
+        wrap.style.cssText = "display:flex;flex-direction:column;font-size:12px;color:var(--muted)";
+        wrap.innerHTML = `${k}<input type="number" id="eco_${k}" value="${v}" />`;
+        eco.appendChild(wrap);
+      }
+      // таблица уровней
+      renderLevels(CFG.levels);
+      // оверрайды
+      $("overrides").value = JSON.stringify(CFG.level_overrides || {}, null, 2);
+      // матвопросы
+      renderMath(CFG.math_questions || []);
+      // диалоги
+      renderDialogues(CFG.dialogues || {});
+      // оружие
+      renderWeapons(CFG.weapons || {});
+    }
+
+    function renderLevels(levels) {
+      const t = $("levels");
+      t.innerHTML = `<thead><tr>
+        <th>Lvl</th><th>survival_time</th><th>enemy_hp×</th><th>enemy_spd×</th><th>enemy_dmg×</th>
+        <th>max_enemies</th><th>bad_chance</th><th>max_order</th></tr></thead>`;
+      const tb = document.createElement("tbody");
+      for (const l of levels) {
+        const s = l.shooter, sh = l.shop;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${l.level}</td><td>${s.survival_time}</td><td>${s.enemy_health_mult}</td>
+          <td>${s.enemy_speed_mult}</td><td>${s.enemy_damage_mult}</td><td>${s.max_enemies}</td>
+          <td>${sh.bad_chance}</td><td>${sh.max_order}</td>`;
+        tb.appendChild(tr);
+      }
+      t.appendChild(tb);
+    }
+
+    async function saveEconomy() {
+      const economy = {};
+      for (const k of Object.keys(CFG.economy)) economy[k] = +$("eco_" + k).value;
+      try { CFG = await adm("/api/admin/config", { method: "PUT", body: { economy } }); renderLevels(CFG.levels); msg("Экономика сохранена", "ok"); }
+      catch (e) { msg(e.message, "err"); }
+    }
+
+    async function saveOverrides() {
+      let level_overrides;
+      try { level_overrides = JSON.parse($("overrides").value || "{}"); }
+      catch (e) { msg("Невалидный JSON: " + e.message, "err"); return; }
+      try {
+        CFG = await adm("/api/admin/config", { method: "PUT", body: { level_overrides } });
+        renderLevels(CFG.levels);
+        $("overrides").value = JSON.stringify(CFG.level_overrides || {}, null, 2);
+        msg("Оверрайды сохранены — игра подхватит на след. уровне", "ok");
+      } catch (e) { msg(e.message, "err"); }
+    }
+
+    async function clearOverrides() {
+      if (!confirm("Сбросить все оверрайды сложности к дефолту?")) return;
+      $("overrides").value = "{}";
+      await saveOverrides();
+    }
+
+    // ---- матвопросы ----
+    let mqCounter = 0;
+    function renderMath(list) {
+      $("mathList").innerHTML = "";
+      (list || []).forEach(q => addMathRow(q));
+    }
+    function addMathRow(q) {
+      q = (q && typeof q === "object") ? q : { text: "", options: [0, 0, 0], answer: 0 };
+      const opts = (q.options || []).concat([0, 0, 0]).slice(0, 3);
+      let correct = opts.findIndex(o => o === q.answer);
+      if (correct < 0) correct = 0;
+      const name = "mq" + (mqCounter++);
+      const row = document.createElement("div");
+      row.className = "mathRow row";
+      row.style.cssText = "margin:6px 0;gap:8px;flex-wrap:wrap;align-items:center";
+      row.innerHTML =
+        `<input class="q-text" placeholder="Вопрос, напр. 7 + 5 = ?" value="${(q.text || "").replace(/"/g, "&quot;")}" style="flex:1;min-width:160px"/>` +
+        opts.map((o, i) =>
+          `<label class="muted" style="font-size:12px;display:inline-flex;align-items:center;gap:3px">
+             <input type="radio" name="${name}" ${i === correct ? "checked" : ""}/>
+             <input type="number" class="q-opt" value="${o}" style="width:70px"/>
+           </label>`).join("") +
+        `<button class="mini" onclick="this.closest('.mathRow').remove()">✕</button>`;
+      $("mathList").appendChild(row);
+    }
+    async function saveMath() {
+      const out = [];
+      for (const row of document.querySelectorAll(".mathRow")) {
+        const text = row.querySelector(".q-text").value.trim();
+        const opts = [...row.querySelectorAll(".q-opt")].map(i => parseInt(i.value || "0", 10));
+        const radios = [...row.querySelectorAll('input[type=radio]')];
+        const ci = radios.findIndex(r => r.checked);
+        if (!text) continue; // пропускаем пустые
+        out.push({ text, options: opts, answer: opts[ci < 0 ? 0 : ci] });
+      }
+      try {
+        CFG = await adm("/api/admin/config", { method: "PUT", body: { math_questions: out } });
+        renderMath(CFG.math_questions || []);
+        msg(`Сохранено вопросов: ${out.length}`, "ok");
+      } catch (e) { msg(e.message, "err"); }
+    }
+
+    // ---- диалоги ----
+    function renderDialogues(d) {
+      const c = $("dialogues"); c.innerHTML = "";
+      Object.keys(d || {}).forEach(key => {
+        const lab = document.createElement("label");
+        lab.style.textTransform = "none";
+        lab.textContent = key;
+        const ta = document.createElement("textarea");
+        ta.setAttribute("data-dlg", key);
+        ta.spellcheck = false;
+        ta.style.minHeight = "120px";
+        ta.value = (d[key] || []).map(n =>
+          (n === "MATH" || n === "math")
+            ? "MATH"
+            : `${n.text || ""} | ${(n.a && n.a[0]) || ""} | ${(n.a && n.a[1]) || ""}`
+        ).join("\n");
+        c.appendChild(lab); c.appendChild(ta);
+      });
+    }
+    function parseDialogue(text) {
+      const nodes = [];
+      text.split("\n").forEach(raw => {
+        const line = raw.trim();
+        if (!line) return;
+        if (line.toUpperCase() === "MATH") { nodes.push("MATH"); return; }
+        const parts = line.split("|").map(s => s.trim());
+        const a = parts.slice(1).filter(x => x.length);
+        nodes.push({ text: parts[0] || "", a: a.length ? a : ["Дальше"] });
+      });
+      return nodes;
+    }
+    async function saveDialogues() {
+      const out = {};
+      document.querySelectorAll("[data-dlg]").forEach(t => {
+        out[t.getAttribute("data-dlg")] = parseDialogue(t.value);
+      });
+      try {
+        CFG = await adm("/api/admin/config", { method: "PUT", body: { dialogues: out } });
+        renderDialogues(CFG.dialogues || {});
+        msg("Диалоги сохранены", "ok");
+      } catch (e) { msg(e.message, "err"); }
+    }
+
+    // ---- оружие ----
+    function renderWeapons(w) {
+      const tb = $("weapons"); tb.innerHTML = "";
+      Object.keys(w || {}).forEach(id => {
+        const it = w[id];
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          `<td>${it.name || id}<br><span class="muted" style="font-size:11px">${id}</span></td>
+           <td><input type="number" step="1"   data-wid="${id}" data-f="damage"    value="${it.damage}" style="width:90px"/></td>
+           <td><input type="number" step="0.01" data-wid="${id}" data-f="fire_rate" value="${it.fire_rate}" style="width:90px"/></td>`;
+        tb.appendChild(tr);
+      });
+    }
+    async function saveWeapons() {
+      const out = {};
+      document.querySelectorAll("[data-wid]").forEach(inp => {
+        const id = inp.getAttribute("data-wid");
+        const f = inp.getAttribute("data-f");
+        out[id] = out[id] || {};
+        out[id][f] = f === "fire_rate" ? parseFloat(inp.value || "0") : parseInt(inp.value || "0", 10);
+      });
+      try {
+        CFG = await adm("/api/admin/config", { method: "PUT", body: { weapons: out } });
+        renderWeapons(CFG.weapons || {});
+        msg("Параметры оружия сохранены", "ok");
+      } catch (e) { msg(e.message, "err"); }
+    }
+
+    // автологин если ключ уже сохранён
+    if (getKey()) { $("keyInput").value = getKey(); login(); }
+  </script>
+</body>
+</html>

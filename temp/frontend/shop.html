@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Магазин — Cashier &amp; Doom</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="card wide">
+    <div class="logo">
+      <pre class="ascii">   .-"""-.
+  / .---. \
+  | |o o| |
+  \  \^/  /
+   '-...-'</pre>
+      <h1>Магазин <span>снаряжения</span></h1>
+      <p>Трать заработанное на оружие и улучшения</p>
+    </div>
+
+    <div class="topbar">
+      <div class="money" id="money">— $</div>
+      <div class="lvl" id="lvl">Уровень —</div>
+    </div>
+
+    <div id="list"><p class="muted center">Загрузка…</p></div>
+    <div class="msg" id="msg"></div>
+
+    <a class="backlink" href="index.html">← На главную</a>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const ICONS = {
+      pistol:"🔫", shotgun:"💥", smg:"🔫", rifle:"🪖", rocket:"🚀",
+      armor:"🛡️", speed_boots:"👟"
+    };
+
+    function msg(text, kind) {
+      $("msg").textContent = text || "";
+      $("msg").className = "msg" + (kind ? " " + kind : "");
+    }
+
+    function statsLine(it) {
+      return Object.entries(it.stats || {}).map(([k,v]) => `${k}: ${v}`).join(" · ");
+    }
+
+    function render(data) {
+      $("money").textContent = data.money + " $";
+      const equipped = data.equipped_weapon || "pistol";
+      const list = $("list");
+      list.innerHTML = "";
+      data.items.forEach((it) => {
+        const div = document.createElement("div");
+        div.className = "item";
+        const tag = it.type === "weapon"
+          ? '<span class="tag-weapon">оружие</span>'
+          : '<span class="tag-perk">перк</span>';
+
+        let action;
+        if (it.owned && it.type === "weapon") {
+          // У оружия — выбор активного ствола (владеешь многими, активен один).
+          action = (it.id === equipped)
+            ? '<span class="badge-owned">✓ Экипировано</span>'
+            : `<button data-equip="${it.id}">Экипировать</button>`;
+        } else if (it.owned) {
+          action = '<span class="badge-owned">✓ Куплено</span>';
+        } else if (!it.unlocked) {
+          action = `<span class="badge-lock">🔒 ур. ${it.unlock_level}</span>`;
+        } else {
+          action = `<button data-id="${it.id}" ${data.money < it.price ? "disabled" : ""}>${it.price} $</button>`;
+        }
+
+        div.innerHTML = `
+          <div class="icon">${ICONS[it.id] || "📦"}</div>
+          <div class="info">
+            <div class="name">${it.name}${tag}</div>
+            <div class="stats">${statsLine(it)}</div>
+          </div>
+          ${action}`;
+        list.appendChild(div);
+      });
+      list.querySelectorAll("button[data-id]").forEach((b) => {
+        b.onclick = () => buy(b.getAttribute("data-id"));
+      });
+      list.querySelectorAll("button[data-equip]").forEach((b) => {
+        b.onclick = () => equip(b.getAttribute("data-equip"));
+      });
+    }
+
+    async function equip(id) {
+      msg("");
+      try {
+        await Game.equipWeapon(id);
+        msg("Экипировано!", "ok");
+        load();
+      } catch (e) { msg(e.message, "err"); }
+    }
+
+    async function buy(id) {
+      msg("");
+      try {
+        await Game.buy(id);
+        msg("Покупка успешна!", "ok");
+        load();
+      } catch (e) { msg(e.message, "err"); }
+    }
+
+    async function load() {
+      try {
+        const me = await Auth.me();
+        $("lvl").textContent = "Уровень " + me.current_level + " / 10";
+        render(await Game.shopItems());
+      } catch (e) { msg(e.message, "err"); }
+    }
+
+    if (requireAuth()) {
+      load();
+      startScreenWatcher("shop");   // follow the game: leave when scene changes
+    }
+  </script>
+</body>
+</html>

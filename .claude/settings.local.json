@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -rn \"DIALOGUE\\\\|clues_for_level\\\\|/dialogue\\\\|clues/{level}\\\\|clues_for\\(\" app/ ../frontend/)",
+      "Bash(python3 -m py_compile app/gamedata.py app/routers/player.py)",
+      "Bash(python3 -c \"import app.main; print\\('импорт ок, роуты:', [r.path for r in app.main.app.routes if 'admin' in r.path]\\)\")",
+      "Bash(python3 -m py_compile app/*.py app/routers/*.py)",
+      "Bash(grep -iA15 \"dependencies\" pyproject.toml)",
+      "Bash(python3 *)",
+      "Bash(node -e \"const s=require\\('fs'\\).readFileSync\\('over.html','utf8'\\);const m=\\(s.match\\(/<script>[\\\\s\\\\S]*?<\\\\/script>/g\\)||[]\\).join\\(''\\);let b=0,p=0;for\\(const c of m\\){if\\(c=='{'\\)b++;if\\(c=='}'\\)b--;if\\(c=='\\('\\)p++;if\\(c=='\\)'\\)p--;}console.log\\('over.html braces',b,'parens',p,\\(b==0&&p==0\\)?'OK':'MISMATCH'\\)\")",
+      "Read(//mnt/data/unityp/iluxaprime/scripts/**)",
+      "Bash(grep -m1 ^guid: scripts/__TRACKED_VAR__.cs.meta)",
+      "Bash(git remote *)",
+      "Bash(command -v gh)",
+      "Bash(gh auth *)",
+      "Bash(grep -ivE '\\\\.\\(meta|cs|unity|mat|asset|prefab|png|jpg|jpeg|exr|ttf|shader|hlsl|cginc|shadergraph|mp3|wav|md|txt|json|inputactions|renderTexture|wlt|yml|yaml|html|js|css|py|toml|cfg|Dockerfile|conf|ico|svg|gif|mp4|webm\\)$')",
+      "Bash(git rm *)",
+      "Bash(git check-ignore *)"
+    ]
+  }
+}

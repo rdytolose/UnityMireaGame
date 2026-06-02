@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Подключение — Cashier &amp; Doom</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <pre class="ascii">   .-"""-.
+  / .---. \
+  | |o o| |
+  \  \^/  /
+   '-...-'</pre>
+      <h1>Cashier <span>&amp; Doom</span></h1>
+    </div>
+
+    <!-- Connecting -->
+    <div id="connectView">
+      <div class="spinner"></div>
+      <p class="center" id="status" style="font-weight:700;">Подключение к игре…</p>
+      <div class="msg" id="msg"></div>
+
+      <!-- Manual code entry, only if no code in the URL -->
+      <div id="manual" class="hidden">
+        <label>Код из игры</label>
+        <input id="codeInput" type="text" maxlength="6" placeholder="ABC123"
+               style="text-transform:uppercase; text-align:center; letter-spacing:6px;" />
+        <button class="primary" id="connectBtn">Подключиться</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const codeFromUrl = (getQueryParam("code") || "").toUpperCase();
+
+    function msg(text, kind) {
+      $("msg").textContent = text || "";
+      $("msg").className = "msg" + (kind ? " " + kind : "");
+    }
+
+    async function connect(code) {
+      if (!code) { msg("Введи код из игры", "err"); return; }
+      $("status").textContent = "Подключение…";
+      try {
+        const res = await Pairing.quickConfirm(code);
+        setToken(res.site_token);
+        $("status").textContent = "Готово! " + res.username;
+        // После линка — вступительный чат с пацаном, оттуда дальше в игру (doom).
+        window.location.href = "story.html";
+      } catch (e) {
+        msg(e.message, "err");
+        $("status").textContent = "Не удалось подключиться";
+        showManual();
+      }
+    }
+
+    function showManual() {
+      $("manual").classList.remove("hidden");
+      document.querySelector(".spinner").classList.add("hidden");
+    }
+
+    $("connectBtn").onclick = () => connect($("codeInput").value.trim().toUpperCase());
+
+    // A scanned QR must always (re)link that code, even if this browser was
+    // paired before — a stale token must not block pairing a fresh code.
+    if (codeFromUrl) {
+      connect(codeFromUrl);   // scanned QR -> link this code (overwrites old token)
+    } else if (getToken()) {
+      goToCurrentScreen();    // no code in URL, already paired -> just follow the game
+    } else {
+      $("status").textContent = "Введи код, показанный в игре";
+      showManual();
+    }
+  </script>
+</body>
+</html>

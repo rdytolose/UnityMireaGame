@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Приметы — Cashier &amp; Doom</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="card wide">
+    <div class="logo">
+      <pre class="ascii">   .-"""-.
+  / .---. \
+  | |o o| |
+  \  \^/  /
+   '-...-'</pre>
+      <h1>Приметы <span>плохих клиентов</span></h1>
+      <p><span class="live-dot"></span>Держи под рукой всю смену</p>
+    </div>
+
+    <div class="topbar">
+      <div class="lvl" id="lvl">Уровень —</div>
+      <div class="lvl" id="count"></div>
+    </div>
+
+    <div id="list"><p class="muted center">Загрузка…</p></div>
+    <div class="msg" id="msg"></div>
+
+    <a class="backlink" href="index.html">← На главную</a>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function render(data) {
+      $("lvl").textContent = "Уровень " + data.level + " / 10";
+      $("count").textContent = data.clues.length + " примет";
+      const list = $("list");
+      list.innerHTML = "";
+      data.clues.forEach((c) => {
+        const div = document.createElement("div");
+        div.className = "clue";
+        const emoji = c.emoji || c.icon || "❓";
+        const name = c.name ? `<b>${c.name}</b><br/>` : "";
+        div.innerHTML = `<div class="icon">${emoji}</div><div class="text">${name}${c.text}</div>`;
+        list.appendChild(div);
+      });
+    }
+
+    async function load() {
+      try { render(await Game.myClues()); }
+      catch (e) { $("msg").textContent = e.message; $("msg").className = "msg err"; }
+    }
+
+    if (requireAuth()) {
+      load();
+      // Refresh periodically so it stays in sync as the level changes.
+      setInterval(load, 15000);
+      // Follow the game: leave this page if the scene changes.
+      startScreenWatcher("clues");
+    }
+  </script>
+</body>
+</html>

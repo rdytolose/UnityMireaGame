@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cashier &amp; Doom</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <pre class="ascii">   .-"""-.
+  / .---. \
+  | |o o| |
+  \  \^/  /
+   '-...-'</pre>
+      <h1>Cashier <span>&amp; Doom</span></h1>
+      <p>Компаньон-экран</p>
+    </div>
+
+    <div class="success-icon">📱</div>
+    <p class="center">Отсканируй <b>QR-код</b>, показанный в игре,<br/>чтобы подключиться.</p>
+    <p class="muted center" style="margin-top:10px">
+      Страницы будут переключаться сами в зависимости от того, что происходит в игре.
+    </p>
+
+    <a href="pair.html"><button class="ghost">Ввести код вручную</button></a>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    // If this browser is already paired, just follow the game.
+    if (getToken()) goToCurrentScreen();
+  </script>
+</body>
+</html>

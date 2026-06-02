@@ -1,0 +1,82 @@
+name: Build & Deploy
+
+# При пуше в main: 1) собираем образы backend+frontend в Actions и пушим в GHCR,
+# 2) по SSH заходим на сервер, тянем готовые образы и перезапускаем контейнеры.
+# Сборка идёт в GitHub, сервер ничего не компилирует — только pull + up.
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  # Базовое имя образов в GHCR. Полные имена: <BASE>-backend, <BASE>-frontend.
+  IMAGE_BASE: ghcr.io/rdytolose/cashier-doom
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write          # нужно, чтобы пушить образы в GHCR
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}    # встроенный токен, секрет создавать не надо
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: temp/backend
+          push: true
+          tags: |
+            ${{ env.IMAGE_BASE }}-backend:latest
+            ${{ env.IMAGE_BASE }}-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: temp/frontend
+          push: true
+          tags: |
+            ${{ env.IMAGE_BASE }}-frontend:latest
+            ${{ env.IMAGE_BASE }}-frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build               # деплой только после успешной сборки образов
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read           # чтобы проброшенный на сервер токен мог pull из GHCR
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # пробрасываем на сервер для docker login
+          GHCR_ACTOR: ${{ github.actor }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: GHCR_TOKEN,GHCR_ACTOR
+          script: |
+            set -e
+            cd "${{ secrets.DEPLOY_PATH }}"          # клон репо (нужен только ради docker-compose.yml/.env)
+            git fetch --all
+            git reset --hard origin/main
+            cd temp
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
+            docker compose pull                      # тянем свежие образы из GHCR
+            docker compose up -d                     # перезапуск без локальной сборки
+            docker image prune -f

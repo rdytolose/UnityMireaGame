@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ожидание — Cashier &amp; Doom</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <pre class="ascii">   .-"""-.
+  / .---. \
+  | |o o| |
+  \  \^/  /
+   '-...-'</pre>
+      <h1>Cashier <span>&amp; Doom</span></h1>
+    </div>
+
+    <div class="spinner" id="spinner"></div>
+    <p class="center" id="title" style="font-size:18px; font-weight:700; margin:6px 0;">Загрузка</p>
+    <p class="muted center" id="subtitle"><span class="dots"></span></p>
+
+    <!-- Pause-only controls -->
+    <div id="pauseControls" class="hidden">
+      <button class="primary" id="resumeBtn">Продолжить</button>
+      <a href="index.html"><button class="ghost">Выйти в меню</button></a>
+    </div>
+
+    <p class="muted center" id="tip" style="margin-top:16px;"></p>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const mode = (getQueryParam("mode") || "loading").toLowerCase();
+
+    const TIPS = [
+      "Совет: проверяй приметы плохих клиентов на телефоне.",
+      "Совет: копи деньги в магазине — оружие в Думе спасает жизнь.",
+      "Совет: в Думе главное — продержаться до конца таймера.",
+      "Совет: с каждым уровнем мобы быстрее и злее.",
+    ];
+
+    function setMode(m) {
+      if (m === "pause") {
+        $("spinner").classList.add("hidden");
+        $("title").textContent = "Пауза";
+        $("subtitle").textContent = "Игра приостановлена";
+        $("pauseControls").classList.remove("hidden");
+      } else {
+        $("title").textContent = "Загрузка";
+        $("subtitle").innerHTML = '<span class="dots"></span>';
+        $("pauseControls").classList.add("hidden");
+      }
+      $("tip").textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
+    }
+
+    // The game can listen for this (e.g. via a local bridge) or simply navigate away.
+    $("resumeBtn").onclick = () => {
+      // Placeholder: signal resume. Replace with your game's resume hook if needed.
+      $("resumeBtn").textContent = "Возвращаемся…";
+      window.history.length > 1 ? window.history.back() : (window.location.href = "index.html");
+    };
+
+    setMode(mode);
+
+    // Follow the game. "loading" page watches for screen != wait; "pause" page
+    // watches for screen != pause. Either way, when the game moves on, redirect.
+    if (requireAuth()) {
+      startScreenWatcher(mode === "pause" ? "pause" : "wait");
+    }
+  </script>
+</body>
+</html>

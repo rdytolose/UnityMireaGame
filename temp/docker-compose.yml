@@ -1,0 +1,30 @@
+services:
+  backend:
+    # На сервере образ тянется из GHCR (docker compose pull).
+    # Локально `docker compose up -d --build` соберёт и пометит этим же тегом.
+    image: ghcr.io/rdytolose/cashier-doom-backend:latest
+    build: ./backend
+    environment:
+      # Значения берутся из .env (рядом с этим файлом), иначе — дефолты ниже.
+      # В проде создай .env на сервере и пропиши свои секреты (он в .gitignore).
+      JWT_SECRET: "${JWT_SECRET:-change-me-to-a-long-random-secret}"
+      ADMIN_KEY: "${ADMIN_KEY:-change-me-admin}"
+      # Публичный URL сайта, куда ведёт QR. ДОЛЖЕН совпадать с BackendConfig.BaseUrl в игре.
+      SITE_BASE_URL: "${SITE_BASE_URL:-http://game.podrik150cm.space:8081}"
+      DATABASE_URL: "sqlite:////data/cashier_doom.db"
+    volumes:
+      - backend_data:/data
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/rdytolose/cashier-doom-frontend:latest
+    build: ./frontend
+    ports:
+      # FRONTEND_PORT наружу → 80 в контейнере nginx. Порт = BackendConfig.BaseUrl в игре.
+      - "${FRONTEND_PORT:-8081}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend_data:
