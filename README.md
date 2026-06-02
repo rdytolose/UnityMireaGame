@@ -1,157 +1,179 @@
-# Cashier & Doom — сервер (бэкенд + фронт): запуск и деплой
+# Cashier & Doom
 
-Здесь живёт серверная часть игры:
-- **`backend/`** — FastAPI (Python), SQLite в docker-volume.
-- **`frontend/`** — статический сайт-компаньон (телефон) + nginx, который и раздаёт
-  сайт, и проксирует `/api/*` на бэкенд.
-- **`docker-compose.yml`** — поднимает оба контейнера.
-
-Наружу торчит только **фронт-nginx на порту `8081`** (его же адрес зашит в игре в
-`BackendConfig.BaseUrl`). Бэкенд доступен только внутри сети compose.
+Roguelike-игра на Unity: ночная смена в киоске (проверяешь покупателей по приметам,
+как в *Papers, Please*) ↔ шутер от первого лица в духе *Doom*. Уровни чередуются,
+прошёл 6 — победил. К игре подключается **телефон-компаньон** (сайт): связь по QR,
+через него идут часть действий (касса, приметы, чат). Всё это связывает **сервер**
+(FastAPI + статический фронт).
 
 ---
 
-## 1. Локальный запуск (для проверки)
+# Часть 1. Развёртывание сервера через Docker
+
+Серверная часть лежит в папке **`temp/`**:
+
+```
+temp/
+├── docker-compose.yml   # поднимает оба контейнера
+├── .env.example         # шаблон настроек → скопировать в .env
+├── backend/             # FastAPI (Python) + SQLite в docker-volume
+└── frontend/            # сайт-компаньон + nginx (раздаёт сайт и проксирует /api на backend)
+```
+
+Наружу торчит только **nginx-фронт на порту `8081`**; бэкенд доступен лишь внутри
+сети compose.
+
+## 1. Быстрый запуск
 
 Нужен **Docker** с плагином **compose v2**.
 
 ```bash
 cd temp
-cp .env.example .env          # (по желанию) впиши свои секреты/порт
+cp .env.example .env          # СНАЧАЛА впиши свои значения (см. таблицу ниже)
 docker compose up -d --build
 ```
 
 Проверка:
 ```bash
-curl http://localhost:8081/health        # {"status":"ok"}
-curl http://localhost:8081/api/levels     # таблица сложности
+curl http://localhost:8081/health     # {"status":"ok"}
+curl http://localhost:8081/api/levels  # таблица сложности
 ```
 - Сайт-компаньон: <http://localhost:8081/>
 - Админка: <http://localhost:8081/admin.html> (ключ = `ADMIN_KEY` из `.env`)
 - Логи: `docker compose logs -f backend`
 - Остановить: `docker compose down` (БД сохранится; `down -v` — стереть БД).
 
-> Для локального теста пейринга с телефона `SITE_BASE_URL` должен быть адресом,
-> доступным телефону (IP машины в сети, напр. `http://192.168.0.10:8081`), и игра
-> должна стучаться туда же.
+## 2. ⚙️ Где менять значения
 
-### Запуск без Docker (если очень надо)
-```bash
-cd temp/backend
-pip install .                 # ставит зависимости из pyproject.toml
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-# фронт — любым статик-сервером из temp/frontend, и проксировать /api на :8000
-```
-Docker-вариант проще — рекомендую его.
+| Что меняешь | Где | Зачем |
+|---|---|---|
+| `JWT_SECRET` | `temp/.env` | секрет подписи токенов. Поставь длинную случайную строку. Смена — разлогинит всех. |
+| `ADMIN_KEY` | `temp/.env` | пароль входа в `/admin.html`. |
+| `SITE_BASE_URL` | `temp/.env` | публичный адрес, который кодируется в QR. **Должен совпадать с адресом в игре** (см. ниже). |
+| `FRONTEND_PORT` | `temp/.env` | внешний порт фронта (дефолт `8081`). Меняешь — меняй и адрес в игре. |
+| `BaseUrl` (адрес сервера в игре) | `scripts/Backend/BackendConfig.cs` | куда Unity-клиент шлёт запросы. Должен указывать на тот же `host:port`, что и `SITE_BASE_URL`/`FRONTEND_PORT`. |
 
----
+> Правило простое: **адрес и порт в `.env` и в `BackendConfig.cs` должны совпадать.**
+> Для теста пейринга с телефона в локалке поставь IP машины в сети, напр.
+> `http://192.168.0.10:8081` (а не `localhost`).
 
-## 2. Залить на GitHub
-
-Репозиторий: **`rdytolose/UnityMireaGame`** (remote `origin` уже настроен).
+## 3. Деплой на свой сервер (продакшен)
 
 ```bash
-# из корня репозитория (папка Assets)
-git add -A
-git commit -m "server + ci/cd"
-git push origin main
-```
-
-Секреты в репозиторий **не попадают**: реальные значения лежат в `.env` на сервере,
-а `.env` в `.gitignore`. В репо — только `.env.example` (шаблон).
-
----
-
-## 3. CI/CD: автодеплой при пуше
-
-Workflow **`.github/workflows/deploy.yml`** при пуше в `main` работает в два этапа:
-1. **build** — собирает образы `backend` и `frontend` прямо в GitHub Actions и пушит
-   их в **GHCR** (`ghcr.io/rdytolose/unitymireagame-backend|frontend`).
-2. **deploy** — заходит по SSH на сервер, делает `git reset --hard origin/main`
-   (ради свежего `docker-compose.yml`), `docker login ghcr.io`, `docker compose pull`
-   и `docker compose up -d`. **Сервер ничего не компилирует — только тянет образы.**
-
-Для входа в GHCR используется встроенный `GITHUB_TOKEN` (пробрасывается на сервер в
-workflow) — отдельный секрет для реестра создавать не нужно.
-
-### Шаг 1. Подготовить сервер (один раз)
-```bash
-# поставить docker + compose
+# на сервере: docker
 curl -fsSL https://get.docker.com | sh
 sudo systemctl enable --now docker
 
-# склонировать репо в рабочую папку (нужно ради docker-compose.yml и .env)
+# код + настройки
 git clone https://github.com/rdytolose/UnityMireaGame.git ~/UnityMireaGame
 cd ~/UnityMireaGame/temp
-cp .env.example .env          # впиши реальные JWT_SECRET / ADMIN_KEY / SITE_BASE_URL
+cp .env.example .env          # впиши боевые значения (таблица выше)
+docker compose up -d --build
 
-# первый запуск можно собрать локально, дальше всё тянется из GHCR:
-docker compose up -d --build  # проверить, что всё поднялось
-
-# открыть порт
-sudo ufw allow 8081/tcp       # + открыть 8081 в фаерволе хостинга, если есть
+sudo ufw allow 8081/tcp       # + открыть порт в фаерволе хостинга
 ```
 
-> `DEPLOY_PATH` в секретах = **абсолютный путь к этому клону** (напр.
-> `/home/youruser/UnityMireaGame`, без `~`). Внутри workflow сам делает `cd temp`.
+`.env` в репозиторий **не попадает** (он в `.gitignore`) — секреты живут только на
+сервере. В репо лежит лишь `.env.example`.
 
-### Шаг 2. Сгенерить SSH-ключ для деплоя (на своей машине)
-```bash
-ssh-keygen -t ed25519 -f deploy_key -N ""
-# публичную часть — на сервер, в авторизованные ключи:
-ssh-copy-id -i deploy_key.pub user@СЕРВЕР      # или вручную в ~/.ssh/authorized_keys
-# приватную часть (файл deploy_key) — в секреты GitHub (ниже)
-```
+## 4. CI/CD: автодеплой при пуше (опционально)
 
-### Шаг 3. Прописать секреты репозитория
-GitHub → твой репозиторий → **Settings → Secrets and variables → Actions → New
-repository secret**. Создай:
+Workflow `.github/workflows/deploy.yml` при пуше в `main`:
+1. **build** — собирает образы в GitHub Actions и пушит в **GHCR**
+   (`ghcr.io/rdytolose/unitymireagame-backend|frontend`);
+2. **deploy** — по SSH на сервере: `git reset --hard` → `docker compose pull` →
+   `up -d`. Сервер только тянет готовые образы, ничего не компилирует.
 
-| Secret | Значение |
-|--------|----------|
-| `SSH_HOST` | IP/домен сервера (напр. `game.podrik150cm.space`) |
-| `SSH_USER` | пользователь SSH (напр. `root` или `deploy`) |
-| `SSH_KEY` | **приватный** ключ целиком (содержимое файла `deploy_key`) |
-| `SSH_PORT` | порт SSH (обычно `22`) |
-| `DEPLOY_PATH` | путь к клону на сервере (напр. `/home/youruser/UnityMireaGame`) |
+Что нужно один раз настроить:
+- **Settings → Actions → General → Workflow permissions → Read and write** (иначе
+  пуш в GHCR упадёт с `write_package denied`).
+- **Секреты репозитория** (Settings → Secrets and variables → Actions):
 
-### Шаг 4. Проверить
-- Сделай пуш в `main` → вкладка **Actions** в GitHub покажет job `Deploy`.
-- Или запусти вручную: Actions → Deploy → **Run workflow**.
-- На сервере убедись: `docker compose ps` (оба Up), `docker compose logs -f`.
+  | Secret | Значение |
+  |--------|----------|
+  | `SSH_HOST` | IP/домен сервера |
+  | `SSH_USER` | пользователь SSH |
+  | `SSH_KEY` | приватный SSH-ключ целиком |
+  | `SSH_PORT` | порт SSH (обычно `22`) |
+  | `DEPLOY_PATH` | абсолютный путь к клону (напр. `/home/user/UnityMireaGame`) |
 
-Готово: теперь **каждый пуш в `main` сам обновляет бек+фронт на сервере**.
+- На сервере держи клон репо по этому `DEPLOY_PATH` (workflow сам делает `cd temp`).
 
----
+## 5. Заметки
 
-## 4. Важные мелочи
-
-- **Порт и адрес.** Внешний порт фронта (`FRONTEND_PORT`, дефолт 8081) и
-  `SITE_BASE_URL` должны совпадать с тем, что зашито в игре
-  (`Assets/scripts/Backend/BackendConfig.cs`). Меняешь адрес/порт — меняй в обоих местах.
-- **Секреты.** `JWT_SECRET` и `ADMIN_KEY` задавай в `.env` на сервере. Смена
-  `JWT_SECRET` разлогинит все токены (придётся переспариться).
-- **БД.** SQLite в volume `backend_data` — переживает рестарты и редеплои. Стереть
+- **БД** — SQLite в volume `backend_data`, переживает рестарты/редеплои. Стереть
   прогресс: `docker compose down -v`. Новые колонки добавляются авто-миграцией
-  (`_auto_migrate` в `app/main.py`) — `down -v` для них не нужен.
-- **Образы в GHCR.** Собираются автоматически в Actions при каждом пуше и лежат в
-  пакетах репозитория (`ghcr.io/rdytolose/unitymireagame-backend|frontend`). Каждый
-  образ тегается `latest` и `<sha>` коммита — можно откатиться на конкретный тег.
-- **Приватность пакетов.** По умолчанию пакеты GHCR приватные; сервер тянет их через
-  `GITHUB_TOKEN` (workflow логинится за тебя), так что вручную делать их публичными не
-  нужно. Если решишь раздавать образ кому-то ещё — переключи видимость пакета в
-  Settings → Packages.
+  (`_auto_migrate` в `app/main.py`).
+- **Без Docker** (если очень надо): `cd temp/backend && pip install . &&
+  uvicorn app.main:app --host 0.0.0.0 --port 8000`, фронт — любым статик-сервером с
+  проксированием `/api` на `:8000`. Docker проще.
 
 ---
 
-## 5. Структура
+# Часть 2. Структура игры
 
-```
-temp/
-├── docker-compose.yml      # поднимает backend + frontend
-├── .env.example            # шаблон секретов (скопируй в .env на сервере)
-├── backend/                # FastAPI: Dockerfile, app/ (роутеры, модели, конфиг)
-└── frontend/               # сайт-компаньон: Dockerfile, nginx.conf, *.html, app.js
-```
-Подробно про код и API — см. `Assets/Docs/` (`API_INTEGRATION.md`,
-`ALL_SCRIPTS_REFERENCE.md`).
+## Как это работает в целом
+
+Игрок связывает игру с телефоном по **QR** (сцена пейринга). Дальше игра и сайт-
+компаньон общаются **через сервер**: игра отправляет текущий экран и состояние,
+телефон показывает нужный интерфейс (касса, приметы, чат) и шлёт обратно действия.
+Сервер хранит прогресс, экономику (деньги), покупки и сложность по уровням.
+
+Цикл уровня: **магазин → экипировка → doom → (чат-переход) → магазин …** Победа — на
+6-м уровне; смерть/выход — экран итогов.
+
+## Сцены (`Scenes/`)
+
+| Сцена | Роль |
+|---|---|
+| `Pairing.unity` | связка с телефоном: QR-код на «старом компьютере» (CRT-моргание). |
+| `Shop.unity` | уровень-киоск: обслуживаешь покупателей, проверяешь по **приметам**, зарабатываешь деньги. |
+| `equipment.unity` | фаза экипировки между уровнями (таймер на закупку). |
+| `doom.unity` | шутер от первого лица: волны врагов, оружие, HP, таймер, GTA-HUD. |
+| `Results.unity` | итоги: победа / поражение / выход; кнопки «начать заново» и «выйти» (токен стирается). |
+
+## Скрипты (`scripts/`)
+
+**`Backend/` — связь с сервером:**
+- `BackendConfig.cs` — адрес сервера (`BaseUrl`).
+- `GameApi.cs` — HTTP-запросы к API.
+- `GameSession.cs` — токен и состояние сессии.
+- `BackendDTO.cs` — модели данных запросов/ответов.
+- `PairingManager.cs` — связка по QR + ожидание «ворот» (gate) с телефона.
+- `DifficultyManager.cs` — параметры сложности по номеру уровня.
+- `ScreenReporter.cs` — сообщает серверу текущий экран игры.
+
+**`DoomLevel/` — дум-уровень:**
+- `DoomPlayerController.cs`, `MouseLook` — управление и камера.
+- `DoomWeapon.cs`, `LoadoutManager.cs` — оружие и его параметры (из `/api/me`).
+- `DoomEnemy.cs`, `EnemySpawner.cs`, `NavMeshLinkJump.cs` — 3D-враги на NavMesh.
+- `DoomHealth.cs`, `DamageScreenEffect.cs` — HP и эффект урона.
+- `GtaHud.cs`, `DoomFaceUI.cs`, `Hitmarker.cs`, `HitParticles.cs` — HUD/фидбек.
+- `DoomTimer.cs`, `LevelTransitionChat.cs` — таймер и чат-переход между уровнями.
+- прочее: звуки, следы, тьма, пул объектов.
+
+**Корень `scripts/` — магазин и общий геймплей:**
+- `CustomerManager.cs` — покупатели и **приметы** (clues), начисление денег.
+- `ShopTimer.cs`, `EquipmentPhaseManager.cs` — таймеры магазина/экипировки.
+- `PlayerInteraction.cs`, `PlayerMovement.cs`, интерактивы (`TVInteractable`,
+  `RadioInteractable`, `SecurityCamerasController`, `ShelfItem`, …).
+- `SceneTransition.cs` — переходы между сценами.
+- `GameOverManager.cs`, `GameStats.cs` — конец игры и статистика.
+
+## Сервер (`temp/backend/app/`)
+
+- `main.py` — приложение FastAPI + авто-миграция БД.
+- `routers/auth.py` — регистрация/логин, JWT.
+- `routers/pairing.py` — связка игра ↔ телефон по QR.
+- `routers/player.py` — состояние игрока, экономика, диалоги, «ворота» (gate).
+- `routers/admin.py` — админка: правка конфига и просмотр игроков (`X-Admin-Key`).
+- `gamedata.py` — приметы, товары, генерация мат-вопросов.
+- `config_store.py` — оверрайды из админки (экономика, уровни, диалоги, оружие).
+- `models.py` / `schemas.py` / `database.py` — БД и схемы.
+
+## Сайт-компаньон (`temp/frontend/`)
+
+Статические страницы под телефон + `admin.html`:
+`index`/`pair` (связка), `story` (интро), `shop` (касса), `clues` (приметы),
+`chat` (мат-чат), `wait` (ожидание), `over` (конец), `admin` (админка).
+Логика — `app.js`, адрес API — `config.js`.
