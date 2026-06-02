@@ -66,7 +66,7 @@ git push origin main
 
 Workflow **`.github/workflows/deploy.yml`** при пуше в `main` работает в два этапа:
 1. **build** — собирает образы `backend` и `frontend` прямо в GitHub Actions и пушит
-   их в **GHCR** (`ghcr.io/rdytolose/cashier-doom-backend|frontend`).
+   их в **GHCR** (`ghcr.io/rdytolose/unitymireagame-backend|frontend`).
 2. **deploy** — заходит по SSH на сервер, делает `git reset --hard origin/main`
    (ради свежего `docker-compose.yml`), `docker login ghcr.io`, `docker compose pull`
    и `docker compose up -d`. **Сервер ничего не компилирует — только тянет образы.**
@@ -135,7 +135,7 @@ repository secret**. Создай:
   прогресс: `docker compose down -v`. Новые колонки добавляются авто-миграцией
   (`_auto_migrate` в `app/main.py`) — `down -v` для них не нужен.
 - **Образы в GHCR.** Собираются автоматически в Actions при каждом пуше и лежат в
-  пакетах репозитория (`ghcr.io/rdytolose/cashier-doom-backend|frontend`). Каждый
+  пакетах репозитория (`ghcr.io/rdytolose/unitymireagame-backend|frontend`). Каждый
   образ тегается `latest` и `<sha>` коммита — можно откатиться на конкретный тег.
 - **Приватность пакетов.** По умолчанию пакеты GHCR приватные; сервер тянет их через
   `GITHUB_TOKEN` (workflow логинится за тебя), так что вручную делать их публичными не

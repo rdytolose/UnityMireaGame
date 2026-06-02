@@ -10,7 +10,7 @@ on:
 
 env:
   # Базовое имя образов в GHCR. Полные имена: <BASE>-backend, <BASE>-frontend.
-  IMAGE_BASE: ghcr.io/rdytolose/cashier-doom
+  IMAGE_BASE: ghcr.io/rdytolose/unitymireagame
 
 jobs:
   build:

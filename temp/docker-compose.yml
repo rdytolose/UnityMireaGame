@@ -2,7 +2,7 @@ services:
   backend:
     # На сервере образ тянется из GHCR (docker compose pull).
     # Локально `docker compose up -d --build` соберёт и пометит этим же тегом.
-    image: ghcr.io/rdytolose/cashier-doom-backend:latest
+    image: ghcr.io/rdytolose/unitymireagame-backend:latest
     build: ./backend
     environment:
       # Значения берутся из .env (рядом с этим файлом), иначе — дефолты ниже.
@@ -17,7 +17,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: ghcr.io/rdytolose/cashier-doom-frontend:latest
+    image: ghcr.io/rdytolose/unitymireagame-frontend:latest
     build: ./frontend
     ports:
       # FRONTEND_PORT наружу → 80 в контейнере nginx. Порт = BackendConfig.BaseUrl в игре.
