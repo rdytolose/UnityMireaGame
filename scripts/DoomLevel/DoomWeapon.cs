@@ -6,12 +6,19 @@ public class DoomWeapon : MonoBehaviour
     public int damage = 25;
     [Tooltip("Пауза между выстрелами в секундах. Меньше = быстрее. Пистолет ~0.3, дробовик ~0.8, автомат ~0.08.")]
     public float fireRate = 0.1f;
+    [Tooltip("Дальность луча. Дальнобойное ~100, ближний бой (топор) ~2.5 — бьёт только вплотную.")]
     public float range = 100f;
+    [Tooltip("Ближний бой: без дульной вспышки и следов от пуль (взмах вместо выстрела).")]
+    public bool isMelee = false;
 
     [Header("Effects")]
     public ParticleSystem muzzleFlash;
     public GameObject impactEffect;
     public AudioSource shootSound;
+    [Tooltip("Звук попадания по врагу для этого оружия. Пусто — дефолтный из Hitmarker.")]
+    public AudioClip hitSound;
+    [Tooltip("Звук добивания врага для этого оружия. Пусто — дефолтный killSound из Hitmarker.")]
+    public AudioClip killSound;
     public LayerMask shootableLayers;
 
     [Header("Recoil")]
@@ -31,10 +38,10 @@ public class DoomWeapon : MonoBehaviour
     {
         if (playerCamera == null)
             playerCamera = Camera.main;
-        
+
         if (weaponModel != null)
             originalPosition = weaponModel.localPosition;
-        
+
         if (weaponAnimator == null)
             weaponAnimator = GetComponent<Animator>();
     }
@@ -47,7 +54,6 @@ public class DoomWeapon : MonoBehaviour
             nextFireTime = Time.time + fireRate;
         }
 
-        // Плавный возврат после отдачи
         if (weaponModel != null)
         {
             recoilOffset = Vector3.Lerp(recoilOffset, Vector3.zero, Time.deltaTime * recoilSpeed);
@@ -57,52 +63,47 @@ public class DoomWeapon : MonoBehaviour
 
     void Shoot()
     {
-        GameStats.AddShot();   // для статистики/точности
+        GameStats.AddShot();
 
-        // Анимация стрельбы
         if (weaponAnimator != null)
             weaponAnimator.SetTrigger("Shoot");
 
-        // Эффекты
-        if (muzzleFlash != null)
+        if (!isMelee && muzzleFlash != null)
             muzzleFlash.Play();
 
-        // PlayOneShot наслаивает выстрелы друг на друга (не обрубает предыдущий),
-        // поэтому быстрый автомат звучит ровно, без «каши» от Play().
-        if (shootSound != null && shootSound.clip != null)
+        if (!isMelee && shootSound != null && shootSound.clip != null)
             shootSound.PlayOneShot(shootSound.clip);
 
-        // Отдача
         if (weaponModel != null)
             recoilOffset = new Vector3(0, 0, -recoilAmount);
 
-        // Raycast
+        bool hitEnemy = false;
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, range, shootableLayers))
         {
-            // Урон врагу
             DoomHealth enemyHealth = hit.collider.GetComponent<DoomHealth>();
             if (enemyHealth != null)
             {
+                hitEnemy = true;
                 bool wasDead = enemyHealth.IsDead();
                 enemyHealth.TakeDamage(damage);
-                GameStats.AddHit();   // попадание по врагу (для точности)
+                GameStats.AddHit();
 
-                // Партиклы крови при попадании по врагу
                 HitParticles.CreateBloodSplash(hit.point, hit.normal);
 
-                // Хитмаркер: обычный при попадании, усиленный при добивании.
-                if (enemyHealth.IsDead() && !wasDead) Hitmarker.Kill();
-                else Hitmarker.Hit();
+                if (enemyHealth.IsDead() && !wasDead) Hitmarker.Kill(killSound);
+                else Hitmarker.Hit(hitSound);
             }
 
-            // Эффект попадания
-            if (impactEffect != null)
+            if (!isMelee && impactEffect != null)
             {
                 GameObject impact = Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
                 Destroy(impact, 1f);
             }
         }
+
+        if (isMelee && !hitEnemy && shootSound != null && shootSound.clip != null)
+            shootSound.PlayOneShot(shootSound.clip);
     }
 
 }

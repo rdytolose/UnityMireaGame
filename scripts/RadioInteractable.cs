@@ -20,7 +20,7 @@ public class RadioInteractable : MonoBehaviour
         if (radioSource == null) radioSource = GetComponentInParent<AudioSource>();
         if (particles == null) particles = GetComponentInChildren<ParticleSystem>(true);
 
-        ApplyState(false); // применяем начальное состояние без "переигрывания"
+        ApplyState(false);
     }
 
     public void Activate()
@@ -31,7 +31,6 @@ public class RadioInteractable : MonoBehaviour
 
     void ApplyState(bool allowRestart)
     {
-        // Audio
         if (radioSource != null)
         {
             if (isOn)
@@ -42,7 +41,6 @@ public class RadioInteractable : MonoBehaviour
                 }
                 else
                 {
-                    // если в инспекторе Play On Awake выключен, то просто оставим как есть
                 }
             }
             else
@@ -51,7 +49,6 @@ public class RadioInteractable : MonoBehaviour
             }
         }
 
-        // Particles
         if (particles != null)
         {
             if (particlesFollowRadio) particles.transform.position = transform.position;
@@ -62,12 +59,10 @@ public class RadioInteractable : MonoBehaviour
             }
             else
             {
-                // Stop(true, StopEmittingAndClear) — сразу очищает частицы
                 particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             }
         }
 
-        // Indicator
         if (indicatorObject != null)
             indicatorObject.SetActive(isOn);
     }

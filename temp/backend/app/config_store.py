@@ -45,7 +45,6 @@ def _deep_merge(base: dict, over: dict) -> dict:
     return out
 
 
-# ---- reads (merged) ----
 
 def economy_overrides(db: Session) -> dict:
     return _get(db, "economy", {})
@@ -61,8 +60,6 @@ def math_questions(db: Session) -> list:
     return v if isinstance(v, list) else []
 
 
-# Диалоги (вступительный и переходный). Узел: {"text","a":[2]} либо строка "MATH"
-# (вставляет арифм. вопрос из пула). Редактируются в админке, по умолчанию — ниже.
 DEFAULT_DIALOGUES = {
     "intro": [
         {"text": "Ну чё, на смену заступаешь?", "a": ["Ага, погнали", "Не выспался капец"]},
@@ -115,7 +112,6 @@ def merged_all_levels(db: Session) -> list:
     return [merged_level_config(db, i) for i in range(1, gamedata.MAX_LEVEL + 1)]
 
 
-# ---- writes ----
 
 def set_economy(db: Session, value: dict) -> None:
     _set(db, "economy", value or {})
@@ -129,7 +125,6 @@ def set_math_questions(db: Session, value: list) -> None:
     _set(db, "math_questions", value or [])
 
 
-# ---- Параметры оружия (урон/скорострельность), редактируются в админке ----
 
 def weapon_overrides(db: Session) -> dict:
     v = _get(db, "weapons", {})
@@ -157,6 +152,8 @@ def all_weapon_stats(db: Session) -> dict:
             "name": it.get("name", it["id"]),
             "damage": eff.get("damage", 25),
             "fire_rate": eff.get("fire_rate", 0.3),
+            "range": eff.get("range", 100),
+            "melee": bool(eff.get("melee", False)),
         }
     return out
 

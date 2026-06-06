@@ -1,13 +1,8 @@
 using System;
 using UnityEngine;
 
-/// <summary>
-/// Удобные обёртки над эндпоинтами экономики/прогресса.
-/// Вызывай из любого скрипта: GameSession.Earn(100); и т.п.
-/// </summary>
 public static class GameSession
 {
-    /// <summary>Начислить/списать деньги (магазин). На сервере не уходит ниже 0.</summary>
     public static void Earn(int amount, Action<int> onMoney = null)
     {
         GameApi.Ensure();
@@ -20,7 +15,6 @@ public static class GameSession
             });
     }
 
-    /// <summary>Купить предмет (оружие/перк) по id из каталога.</summary>
     public static void Buy(string itemId, Action<bool, string> onResult = null)
     {
         GameApi.Ensure();
@@ -29,7 +23,6 @@ public static class GameSession
             (ok, body) => onResult?.Invoke(ok, body));
     }
 
-    /// <summary>Вызвать, когда игрок выжил в Думе. Двигает прогресс на след. уровень.</summary>
     public static void CompleteLevel(Action<bool> onDone = null)
     {
         GameApi.Ensure();
@@ -42,8 +35,6 @@ public static class GameSession
             });
     }
 
-    /// <summary>Сообщить бэкенду текущую сцену — телефон сам переключит страницу.
-    /// Допустимые значения: "wait" | "clues" | "shop" | "chat" | "pause".</summary>
     public static void SetScreen(string screen)
     {
         GameApi.Ensure();
@@ -52,7 +43,6 @@ public static class GameSession
             (ok, body) => { });
     }
 
-    /// <summary>Текущее состояние игрока (деньги, уровень).</summary>
     public static void FetchMe(Action<MeResp> onMe)
     {
         GameApi.Ensure();
@@ -62,7 +52,6 @@ public static class GameSession
         });
     }
 
-    /// <summary>Накопленные приметы плохого клиента (растут случайно по дням).</summary>
     public static void FetchClues(Action<CluesResp> onClues)
     {
         GameApi.Ensure();
@@ -72,7 +61,6 @@ public static class GameSession
         });
     }
 
-    /// <summary>Создать новый пример в чате (бэк генерит, телефон покажет).</summary>
     public static void ChatNewQuestion(Action<ChatQuestionResp> onQ)
     {
         GameApi.Ensure();
@@ -82,7 +70,6 @@ public static class GameSession
         });
     }
 
-    /// <summary>Узнать, ответил ли игрок на телефоне и верно ли.</summary>
     public static void FetchChatState(Action<ChatStateResp> onState)
     {
         GameApi.Ensure();

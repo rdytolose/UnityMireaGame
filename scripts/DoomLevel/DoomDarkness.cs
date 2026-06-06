@@ -1,14 +1,13 @@
 using UnityEngine;
 
-// Затемняет экран для атмосферы Doom
 public class DoomDarkness : MonoBehaviour
 {
     [Header("Darkness Settings")]
     [Range(0f, 1f)]
-    public float darknessAmount = 0.5f; // 0 = нормально, 1 = очень темно
-    
-    public Color darknessColor = new Color(0, 0, 0, 0.5f); // Черный полупрозрачный
-    
+    public float darknessAmount = 0.5f;
+
+    public Color darknessColor = new Color(0, 0, 0, 0.5f);
+
     [Header("Vignette (затемнение по краям)")]
     public bool useVignette = true;
     [Range(0f, 1f)]

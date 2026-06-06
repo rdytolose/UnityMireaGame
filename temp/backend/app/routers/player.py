@@ -56,6 +56,7 @@ def _state_response(db: Session, user: User) -> PlayerStateResponse:
         equipped_weapon=equipped,
         weapon_damage=float(stats.get("damage", 25)),
         weapon_fire_rate=float(stats.get("fire_rate", 0.3)),
+        weapon_range=float(stats.get("range", 100)),
     )
 
 
@@ -97,7 +98,6 @@ def shop_items(user: User = Depends(get_current_user), db: Session = Depends(get
     for item in ITEMS:
         out.append({
             **item,
-            # пистолет — бесплатный дефолт, считаем его всегда «в наличии»
             "owned": item["id"] in owned or item["id"] == "pistol",
             "unlocked": st.current_level >= item["unlock_level"],
         })
@@ -112,7 +112,6 @@ def equip_weapon(req: EquipWeaponRequest, user: User = Depends(get_current_user)
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown weapon")
 
     st = _state(db, user)
-    # Пистолет доступен всегда (дефолт); остальные стволы нужно сперва купить.
     if req.item_id != "pistol":
         owned = db.query(OwnedItem).filter(
             OwnedItem.user_id == user.id, OwnedItem.item_id == req.item_id
@@ -220,7 +219,6 @@ def my_clues(user: User = Depends(get_current_user), db: Session = Depends(get_d
     return {"level": st.current_level, "clues": clues}
 
 
-# ---- Математика в чате (doom): телефон ↔ игра через бэкенд ----
 
 @router.post("/chat/question", response_model=ChatQuestionResponse)
 def chat_new_question(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -278,7 +276,6 @@ def chat_state(user: User = Depends(get_current_user), db: Session = Depends(get
     return ChatStateResponse(id=st.chat_q_id or 0, status=st.chat_q_status or "idle")
 
 
-# ---- Диалоги на телефоне (интро / переход) + «гейт» старта сцены ----
 
 @router.get("/dialogue/{key}")
 def get_dialogue(key: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -301,8 +298,6 @@ def intro_questions(user: User = Depends(get_current_user), db: Session = Depend
     return {"questions": out}
 
 
-# «Гейт» один на игрока: игра ставит его в False перед ожиданием, телефон —
-# в True по окончании диалога. Используется и для link→doom, и для doom→shop.
 
 @router.post("/gate/reset")
 def gate_reset(user: User = Depends(get_current_user), db: Session = Depends(get_db)):

@@ -6,27 +6,26 @@ validation of purchases / progression.
 
 import random
 
-# Shop economy (money values, already x100 vs the original score system).
 ECONOMY = {
-    "reward_correct_serve": 100,   # served a good customer correctly
-    "penalty_serve_bad": -300,     # served a bad customer
-    "reward_skip_bad": 100,        # correctly skipped a bad customer
-    "penalty_skip_good": -100,     # wrongly skipped a good customer
+    "reward_correct_serve": 100,
+    "penalty_serve_bad": -300,
+    "reward_skip_bad": 100,
+    "penalty_skip_good": -100,
 }
 
-# Catalog of weapons / perks the player can buy in the EquipmentShop.
-# `unlock_level` gates an item until the player reaches that level.
 ITEMS = [
+    {"id": "axe",           "name": "Топор",           "type": "weapon", "price": 600,  "unlock_level": 1,
+     "stats": {"damage": 80, "fire_rate": 0.50, "range": 2.5, "melee": True}},
     {"id": "pistol",        "name": "Pistol",          "type": "weapon", "price": 0,    "unlock_level": 1,
-     "stats": {"damage": 25, "fire_rate": 0.30, "ammo": 80}},
+     "stats": {"damage": 25, "fire_rate": 0.30, "range": 100, "ammo": 80}},
     {"id": "shotgun",       "name": "Shotgun",         "type": "weapon", "price": 1500, "unlock_level": 2,
-     "stats": {"damage": 60, "fire_rate": 0.80, "ammo": 40}},
+     "stats": {"damage": 60, "fire_rate": 0.80, "range": 100, "ammo": 40}},
     {"id": "smg",           "name": "SMG",             "type": "weapon", "price": 2500, "unlock_level": 3,
-     "stats": {"damage": 18, "fire_rate": 0.08, "ammo": 200}},
+     "stats": {"damage": 18, "fire_rate": 0.08, "range": 100, "ammo": 200}},
     {"id": "rifle",         "name": "Assault Rifle",   "type": "weapon", "price": 4000, "unlock_level": 4,
-     "stats": {"damage": 35, "fire_rate": 0.12, "ammo": 150}},
+     "stats": {"damage": 35, "fire_rate": 0.12, "range": 100, "ammo": 150}},
     {"id": "rocket",        "name": "Rocket Launcher", "type": "weapon", "price": 8000, "unlock_level": 6,
-     "stats": {"damage": 150, "fire_rate": 1.20, "ammo": 12}},
+     "stats": {"damage": 150, "fire_rate": 1.20, "range": 100, "ammo": 12}},
 
     {"id": "armor",         "name": "Body Armor",      "type": "perk",   "price": 1200, "unlock_level": 1,
      "stats": {"max_health_bonus": 50}},
@@ -38,20 +37,7 @@ ITEMS_BY_ID = {item["id"]: item for item in ITEMS}
 
 MAX_LEVEL = 10
 
-# Пул примет плохого клиента. ЗАПОЛНЯЙ САМ.
-#   id     — уникальный идентификатор (используется в игре для карты clue_id→prefab).
-#   emoji  — эмодзи на телефоне.
-#   name   — короткое название на телефоне.
-#   text   — описание приметы на телефоне.
-#   type   — "object" (физический предмет в лавке) или "text" (вшивается в реплику клиента).
-#   phrase — ТОЛЬКО для type="text": фраза, которую клиент вставляет в своё сообщение.
-#
-# Игрок каждый день получает +1 случайную примету из этого пула и она запоминается
-# на всю игру (см. revealed_clues в player.py).
 CLUES = [
-    # Предметные приметы. id совпадает с картой clueObjectPrefabs на CustomerManager (сцена Shop):
-    #   police_car     → префаб PoliceCarLowPoly 1
-    #   suspicious_man → префаб Male Locomotion Pose
     {"id": "police_car",     "emoji": "🚓", "name": "Полицейская машина", "text": "У входа стоит полицейская машина",     "type": "object"},
     {"id": "suspicious_man", "emoji": "🕴️", "name": "Подозрительный тип",  "text": "Рядом топчется чей-то подельник",     "type": "object"},
 ]
@@ -89,24 +75,23 @@ def level_config(level: int) -> dict:
     spot, and customers arrive a bit faster.
     """
     level = max(1, min(level, MAX_LEVEL))
-    step = level - 1  # 0-based progression factor
+    step = level - 1
 
-    # Survival time: starts at 180s (3 min) and ramps up. Designers can tweak.
-    survival_time = 180 + step * 15  # 180s -> 315s at level 10
+    survival_time = 180 + step * 15
 
     return {
         "level": level,
         "shooter": {
             "survival_time": survival_time,
-            "enemy_health_mult": round(1.0 + step * 0.20, 2),   # +20% per level
-            "enemy_speed_mult": round(1.0 + step * 0.10, 2),    # +10% per level
-            "enemy_damage_mult": round(1.0 + step * 0.15, 2),   # +15% per level
-            "max_enemies": 8 + step * 2,                        # 8 -> 26
+            "enemy_health_mult": round(1.0 + step * 0.20, 2),
+            "enemy_speed_mult": round(1.0 + step * 0.10, 2),
+            "enemy_damage_mult": round(1.0 + step * 0.15, 2),
+            "max_enemies": 8 + step * 2,
             "spawn_min_delay": round(max(0.8, 5.0 - step * 0.4), 2),
             "spawn_max_delay": round(max(2.0, 15.0 - step * 1.0), 2),
         },
         "shop": {
-            "clue_types": min(2 + step, 11),       # new clues unlock each level
+            "clue_types": min(2 + step, 11),
             "bad_chance": round(min(0.3 + step * 0.04, 0.7), 2),
             "min_order": 1 + step // 3,
             "max_order": 6 + step,

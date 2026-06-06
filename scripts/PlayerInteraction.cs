@@ -112,19 +112,16 @@ public class PlayerInteraction : MonoBehaviour
     {
     Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
     if (!Physics.Raycast(ray, out RaycastHit hit, pickupRange, pickupMask)) return;
- 
-    // 0a) ТВ — открыть камеры
+
     var tv = hit.collider.GetComponentInParent<TVInteractable>();
     if (tv != null) { tv.Activate(); return; }
 
     var radio = hit.collider.GetComponentInParent<RadioInteractable>();
     if (radio != null) { radio.Activate(); return; }
- 
-    // 0c) Кнопка «Скип»
+
     var skip = hit.collider.GetComponentInParent<SkipButton>();
     if (skip != null) { skip.Activate(); return; }
 
-    // 1) Полка — спавним префаб в безопасной точке (holdPoint)
     ShelfItem shelf = hit.collider.GetComponentInParent<ShelfItem>();
     if (shelf != null && shelf.itemPrefab != null)
     {
@@ -132,7 +129,6 @@ public class PlayerInteraction : MonoBehaviour
             ? holdPoint.position
             : playerCamera.transform.position + playerCamera.transform.forward * minHoldDistance;
 
-    // Берём ротейт прямо из префаба (-90 X сохранится)
         Quaternion spawnRot = shelf.itemPrefab.transform.rotation;
 
         Rigidbody spawned = Instantiate(shelf.itemPrefab, spawnPos, spawnRot);
@@ -143,7 +139,6 @@ public class PlayerInteraction : MonoBehaviour
         GrabRigidbody(spawned, spawnPos);
         return;
     }
-    // 2) Обычный подбор
     Rigidbody rb = hit.rigidbody;
     if (rb == null || rb.isKinematic) return;
     GrabRigidbody(rb, hit.point);
@@ -157,12 +152,12 @@ public class PlayerInteraction : MonoBehaviour
     rb.linearDamping = 10f;
     rb.angularDamping = 10f;
     rb.useGravity = false;
-    rb.angularVelocity = Vector3.zero; // можно оставить — обнулит угловую скорость
- 
+    rb.angularVelocity = Vector3.zero;
+
     currentHoldDistance = Mathf.Clamp(
         Vector3.Distance(playerCamera.transform.position, hitPoint),
         minHoldDistance, maxScrollDistance);
- 
+
     ClearHover();
 }
 

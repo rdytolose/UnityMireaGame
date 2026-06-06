@@ -14,7 +14,6 @@ bearer_scheme = HTTPBearer(auto_error=True)
 
 
 def hash_password(password: str) -> str:
-    # bcrypt operates on at most 72 bytes; truncate to stay within that limit.
     pw = password.encode("utf-8")[:72]
     return bcrypt.hashpw(pw, bcrypt.gensalt()).decode("utf-8")
 
@@ -30,7 +29,7 @@ def create_token(user_id: int, scope: str, ttl_minutes: int) -> str:
     now = datetime.now(timezone.utc)
     payload = {
         "sub": str(user_id),
-        "scope": scope,  # "site" or "game"
+        "scope": scope,
         "iat": now,
         "exp": now + timedelta(minutes=ttl_minutes),
     }

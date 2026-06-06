@@ -4,14 +4,6 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 
-/// <summary>
-/// Сцена итогов. НИЧЕГО не создаёт — ты сам раскладываешь Canvas (заголовок, статистика,
-/// две кнопки) и перетаскиваешь их в поля ниже. Скрипт только пишет текст и вешает действия.
-///
-/// Кнопки:
-///   Restart → стирает токен, сбрасывает статы, грузит сцену пейринга;
-///   Quit    → стирает токен и закрывает игру.
-/// </summary>
 public class GameOverManager : MonoBehaviour
 {
     [Header("Сцена пейринга (для «начать заново»)")]
@@ -52,7 +44,6 @@ public class GameOverManager : MonoBehaviour
 
         RenderStats();
 
-        // Итоговый баланс с бэка (токен ещё жив — стираем только по кнопке).
         GameApi.Ensure();
         GameSession.FetchMe(me => { _money = (me != null) ? me.money : 0; RenderStats(); });
     }

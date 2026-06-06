@@ -17,9 +17,9 @@ public class CustomerManager : MonoBehaviour
     [System.Serializable]
     public class CluePrefabMap
     {
-        public string clueId;       // id из пула CLUES на бэке
-        public GameObject prefab;   // что спавнить (для type="object")
-        public Transform spawnPoint; // жёсткая точка спавна этой приметы
+        public string clueId;
+        public GameObject prefab;
+        public Transform spawnPoint;
     }
 
     [Tooltip("Карта clue_id → префаб + точка для предметных примет (type='object')")]
@@ -82,9 +82,9 @@ public class CustomerManager : MonoBehaviour
     int remaining;
     bool currentIsBad;
     GameObject currentClue;
-    string currentCluePhrase;   // для текстовой приметы — фраза в реплику клиента
+    string currentCluePhrase;
     readonly List<ClueDTO> revealedClues = new List<ClueDTO>();
-    bool cluesReady = false;    // приметы пришли с бэка (или истёк таймаут)
+    bool cluesReady = false;
     GameObject currentCustomer;
     bool customerActive = false;
     bool transitioning = false;
@@ -97,7 +97,6 @@ public class CustomerManager : MonoBehaviour
     {
         if (feedbackFX == null) feedbackFX = Object.FindFirstObjectByType<FeedbackFX>();
 
-        // Тянем накопленные приметы с бэка (растут случайно по дням, запоминаются).
         GameSession.FetchClues(r =>
         {
             revealedClues.Clear();
@@ -105,7 +104,6 @@ public class CustomerManager : MonoBehaviour
             cluesReady = true;
         });
 
-        // Стартуем с РЕАЛЬНОГО баланса игрока (а не с нуля) — показываем всю сумму.
         GameSession.FetchMe(me => { if (me != null) { score = me.money; UpdateScoreUI(); } });
 
         UpdateScoreUI();
@@ -119,8 +117,6 @@ public class CustomerManager : MonoBehaviour
 
     IEnumerator CustomerLoop()
     {
-        // Ждём, пока подгрузятся приметы (иначе первый "плохой" клиент будет без улики).
-        // Таймаут — чтобы не зависнуть, если бэк недоступен.
         float t = 0f;
         while (!cluesReady && t < 3f) { t += Time.deltaTime; yield return null; }
 
@@ -197,7 +193,6 @@ public class CustomerManager : MonoBehaviour
             : "Дай мне {N} бутылок.";
         string text = template.Replace("{N}", currentOrder.ToString());
 
-        // Текстовая примета — вшиваем фразу в реплику плохого клиента.
         if (!string.IsNullOrEmpty(currentCluePhrase))
             text += "\n" + currentCluePhrase;
 
@@ -269,7 +264,6 @@ public class CustomerManager : MonoBehaviour
         if (currentIsBad) SpawnClueForBadCustomer();
     }
 
-    // Плохой клиент проявляет ОДНУ из накопленных примет (как в Papers Please).
     void SpawnClueForBadCustomer()
     {
         if (revealedClues.Count == 0) return;
@@ -277,11 +271,10 @@ public class CustomerManager : MonoBehaviour
         var clue = revealedClues[Random.Range(0, revealedClues.Count)];
         if (clue.type == "text")
         {
-            currentCluePhrase = clue.phrase;   // вошьётся в реплику в PlayDialog
+            currentCluePhrase = clue.phrase;
             return;
         }
 
-        // Предметная примета — строго свой префаб в своей точке.
         var map = FindClueMap(clue.id);
         if (map != null && map.prefab != null && map.spawnPoint != null)
             currentClue = Instantiate(map.prefab, map.spawnPoint.position, map.spawnPoint.rotation);
@@ -331,7 +324,6 @@ public class CustomerManager : MonoBehaviour
         if (!customerActive || transitioning) { Destroy(d.gameObject); return; }
         Destroy(d.gameObject);
 
-        // СРАЗУ: если плохой — это ошибка
         if (currentIsBad)
         {
             ChangeScore(penaltyServeBad);
@@ -344,7 +336,6 @@ public class CustomerManager : MonoBehaviour
         remaining--;
         UpdateDialogUI();
 
-        // СРАЗУ: если добили заказ — это правильно
         if (remaining <= 0)
         {
             ChangeScore(rewardCorrectServe);
@@ -358,7 +349,6 @@ public class CustomerManager : MonoBehaviour
     {
         if (!customerActive || transitioning) return;
 
-        // СРАЗУ при нажатии skip даём feedback
         if (currentIsBad)
         {
             ChangeScore(rewardSkipBad);
@@ -384,9 +374,8 @@ public class CustomerManager : MonoBehaviour
 
     void ChangeScore(int delta)
     {
-        score += delta;            // оптимистично сразу показываем
+        score += delta;
         UpdateScoreUI();
-        // Синкаем с бэком и корректируем по авторитетной сумме (на бэке не уходит ниже 0).
         GameSession.Earn(delta, money => { score = money; UpdateScoreUI(); });
     }
     void UpdateScoreUI() { if (scoreText != null) scoreText.text = "$" + score; }

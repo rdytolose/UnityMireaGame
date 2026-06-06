@@ -21,6 +21,7 @@
 !*.yml
 !*.yaml
 !*.conf
+!*.cfg
 !*.md
 !*.txt
 !**/Dockerfile
@@ -97,3 +98,5 @@ id_ecdsa
 .DS_Store
 Thumbs.db
 .claude/
+_Recovery/
+_Recovery.meta

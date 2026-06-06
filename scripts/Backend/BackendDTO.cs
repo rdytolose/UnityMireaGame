@@ -1,9 +1,8 @@
-// DTO-классы для JsonUtility. Имена полей ДОЛЖНЫ совпадать с JSON бэкенда.
 using System;
 
 [Serializable] public class EarnReq { public int amount; }
 [Serializable] public class BuyReq { public string item_id; }
-[Serializable] public class ScreenReq { public string screen; } // wait|clues|shop|chat|pause
+[Serializable] public class ScreenReq { public string screen; }
 
 [Serializable] public class MoneyResp { public int money; }
 
@@ -13,10 +12,11 @@ using System;
     public int money;
     public int current_level;
     public int highest_level;
-    public string[] items;   // купленное снаряжение (id из каталога), отдаёт /api/me
-    public string equipped_weapon;  // активный ствол, выбранный на сайте
-    public float weapon_damage;     // эффективный урон активного оружия (из админки)
-    public float weapon_fire_rate;  // эффективная скорострельность (пауза между выстрелами)
+    public string[] items;
+    public string equipped_weapon;
+    public float weapon_damage;
+    public float weapon_fire_rate;
+    public float weapon_range;
 }
 
 [Serializable] public class CompleteLevelResp
@@ -54,15 +54,14 @@ using System;
     public ShopCfg shop;
 }
 
-// Clues (приметы плохого клиента)
 [Serializable] public class ClueDTO
 {
     public string id;
     public string emoji;
     public string name;
     public string text;
-    public string type;     // "object" | "text"
-    public string phrase;   // только для type="text": фраза в реплику клиента
+    public string type;
+    public string phrase;
 }
 
 [Serializable] public class CluesResp
@@ -71,13 +70,12 @@ using System;
     public ClueDTO[] clues;
 }
 
-// Chat math (математика в чате doom)
 [Serializable] public class ChatQuestionResp
 {
     public int id;
     public string text;
     public int[] options;
-    public string status;   // idle | pending | correct | wrong
+    public string status;
 }
 
 [Serializable] public class ChatStateResp
@@ -86,10 +84,8 @@ using System;
     public string status;
 }
 
-// Intro (вступительный чат на телефоне): игра ждёт его окончания перед стартом doom
 [Serializable] public class IntroStatusResp { public bool done; }
 
-// Pairing
 [Serializable] public class PairStartResp
 {
     public string code;
@@ -101,7 +97,7 @@ using System;
 
 [Serializable] public class PairStatusResp
 {
-    public string status;       // pending | linked | consumed | expired
+    public string status;
     public string game_token;
     public string username;
 }

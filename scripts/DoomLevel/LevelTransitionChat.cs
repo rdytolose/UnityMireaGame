@@ -5,13 +5,6 @@ using UnityEngine.Video;
 using UnityEngine.SceneManagement;
 using TMPro;
 
-/// <summary>
-/// Переход doom→shop: морозит бой, плавно затемняет экран, показывает видео-заставку
-/// + «смотри в телефон», а на телефоне в это время идёт переходный диалог (screen="talk").
-/// Когда игрок дочитал диалог (гейт done) — затемняет и грузит магазин.
-///
-/// Повесь на пустой объект в сцене doom. DoomTimer сам вызовет Begin() по концу боя.
-/// </summary>
 public class LevelTransitionChat : MonoBehaviour
 {
     [Header("Сцена после диалога")]
@@ -43,9 +36,8 @@ public class LevelTransitionChat : MonoBehaviour
     bool _started = false;
     bool _gateDone = false;
     Canvas _canvas;
-    Image _fader;   // чёрная плашка для фейдов, всегда поверх содержимого
+    Image _fader;
 
-    /// <summary>Запустить переход (зовётся из DoomTimer по концу боя).</summary>
     public void Begin()
     {
         if (_started) return;
@@ -57,22 +49,19 @@ public class LevelTransitionChat : MonoBehaviour
     {
         GameApi.Ensure();
 
-        // Диалог в чате показываем ТОЛЬКО ОДИН РАЗ за забег. Дальше — просто видео N секунд.
         bool firstTime = !GameStats.Ensure().transitionChatShown;
 
-        // Мгновенно морозим бой — игрок в безопасности; дальше всё на unscaled-времени.
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        BuildCanvas();                              // канвас + чёрный фейдер (alpha 0)
-        yield return Fade(0f, 1f);                  // 1) затемняем экран
-        BuildContent(firstTime);                    // 2) видео (+ подсказка только в 1-й раз)
-        yield return Fade(1f, 0f);                  // 3) проявляем заставку
+        BuildCanvas();
+        yield return Fade(0f, 1f);
+        BuildContent(firstTime);
+        yield return Fade(1f, 0f);
 
         if (firstTime)
         {
-            // ПЕРВЫЙ раз: телефон показывает диалог, ждём его прохождения (гейт).
             GameStats.I.transitionChatShown = true;
             GameApi.Instance.Post("/api/gate/reset", "{}", (ok, body) => { });
             GameSession.SetScreen("talk");
@@ -91,12 +80,10 @@ public class LevelTransitionChat : MonoBehaviour
         }
         else
         {
-            // Все последующие разы: без диалога — просто крутим видео videoOnlyDuration секунд.
-            GameSession.SetScreen("wait");          // телефон — нейтральная загрузка
+            GameSession.SetScreen("wait");
             yield return new WaitForSecondsRealtime(videoOnlyDuration);
         }
 
-        // Снова в чёрный и грузим магазин (timeScale переносится между сценами!).
         yield return Fade(0f, 1f);
         Time.timeScale = 1f;
         if (SceneTransition.Instance != null)
@@ -127,7 +114,6 @@ public class LevelTransitionChat : MonoBehaviour
         var scaler = canvasObj.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
-        // GraphicRaycaster не нужен — кликов нет (взаимодействие на телефоне).
 
         var faderObj = new GameObject("Fader");
         faderObj.transform.SetParent(_canvas.transform, false);
@@ -139,7 +125,6 @@ public class LevelTransitionChat : MonoBehaviour
 
     void BuildContent(bool showHint)
     {
-        // Фон — всегда чёрный на весь экран (вокруг видео, чтобы не было видно замёрзшей сцены).
         var bgObj = new GameObject("Black");
         bgObj.transform.SetParent(_canvas.transform, false);
         var bg = bgObj.AddComponent<Image>();
@@ -147,7 +132,6 @@ public class LevelTransitionChat : MonoBehaviour
         bg.raycastTarget = false;
         Stretch(bg.rectTransform);
 
-        // Видео — отдельным окном заданного размера по центру (НЕ на весь экран), со звуком.
         if (videoClip != null)
         {
             var rt = new RenderTexture(1280, 720, 0);
@@ -158,8 +142,6 @@ public class LevelTransitionChat : MonoBehaviour
             vp.clip = videoClip;
             vp.isLooping = loopVideo;
 
-            // Звук через AudioSource (надёжнее Direct, особенно в редакторе на Linux).
-            // Конфигурируем ДО Play(). Требует, чтобы у ролика была аудио-дорожка.
             if (playVideoSound)
             {
                 var aud = gameObject.AddComponent<AudioSource>();
@@ -189,7 +171,6 @@ public class LevelTransitionChat : MonoBehaviour
             vr.sizeDelta = videoSize;
         }
 
-        // Подсказка «смотри в телефон» — только когда идёт диалог (первый раз).
         if (showHint)
         {
             var textObj = new GameObject("Hint");
@@ -215,7 +196,6 @@ public class LevelTransitionChat : MonoBehaviour
             r.sizeDelta = new Vector2(1400, 140);
         }
 
-        // Фейдер всегда поверх всего — чтобы финальное затемнение перекрыло и видео, и текст.
         _fader.transform.SetAsLastSibling();
     }
 

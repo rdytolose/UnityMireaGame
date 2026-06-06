@@ -30,8 +30,8 @@
   <script src="app.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
-    let shownId = 0;       // id вопроса, который сейчас на экране
-    let answering = false; // защита от двойного клика
+    let shownId = 0;
+    let answering = false;
 
     function setMsg(text, kind) {
       $("msg").textContent = text || "";
@@ -71,23 +71,21 @@
     async function poll() {
       try {
         const q = await Chat.getQuestion();
-        // Новый pending-вопрос с другим id → показать.
         if (q.status === "pending" && q.id && q.id !== shownId) {
           renderQuestion(q);
         } else if (q.status !== "pending" && shownId !== 0 && q.id === shownId) {
-          // На текущий вопрос уже ответили (статус сменился) — ждём следующий.
           shownId = 0;
         } else if (q.status !== "pending" && !$("choices").hasChildNodes()) {
           showWaiting();
         }
-      } catch (e) { /* тихо: связь могла моргнуть */ }
+      } catch (e) {  }
     }
 
     if (requireAuth()) {
       showWaiting();
       poll();
       setInterval(poll, 1000);
-      startScreenWatcher("chat");   // follow the game: leave when scene changes
+      startScreenWatcher("chat");
     }
   </script>
 </body>

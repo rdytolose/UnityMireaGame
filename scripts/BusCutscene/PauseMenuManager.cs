@@ -43,10 +43,6 @@ public class PauseMenuManager : MonoBehaviour
         if (Instance == this) SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    // При входе в новую сцену гарантируем, что пауза снята и время идёт.
-    // Менеджер живёт между сценами (DontDestroyOnLoad), поэтому залипшее состояние
-    // паузы из прошлой сцены (Time.timeScale = 0, видимая панель) иначе блокировало бы
-    // ввод и кнопки в новой сцене.
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         if (IsPaused)
@@ -106,7 +102,6 @@ public class PauseMenuManager : MonoBehaviour
         Time.timeScale = 1f;
         AudioListener.pause = false;
         pausePanel.SetActive(false);
-        // Выход из игры = прерванная смена → сцена итогов (там «выйти»/«заново»).
         GameStats.End(GameStats.Outcome.Quit);
     }
 
