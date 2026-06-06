@@ -17,6 +17,8 @@ public class DoomWeapon : MonoBehaviour
     public AudioSource shootSound;
     [Tooltip("Звук попадания по врагу для этого оружия. Пусто — дефолтный из Hitmarker.")]
     public AudioClip hitSound;
+    [Tooltip("Звук добивания врага для этого оружия. Пусто — дефолтный killSound из Hitmarker.")]
+    public AudioClip killSound;
     public LayerMask shootableLayers;
 
     [Header("Recoil")]
@@ -72,9 +74,10 @@ public class DoomWeapon : MonoBehaviour
         if (!isMelee && muzzleFlash != null)
             muzzleFlash.Play();
 
-        // PlayOneShot наслаивает выстрелы друг на друга (не обрубает предыдущий),
-        // поэтому быстрый автомат звучит ровно, без «каши» от Play().
-        if (shootSound != null && shootSound.clip != null)
+        // Дальнобойное: звук выстрела играет всегда. Ближний бой: звук взмаха играем
+        // только на ПРОМАХЕ (ниже), чтобы при убийстве звучал лишь килл-звук.
+        // PlayOneShot наслаивает звуки (не обрубает предыдущий) — автомат звучит ровно.
+        if (!isMelee && shootSound != null && shootSound.clip != null)
             shootSound.PlayOneShot(shootSound.clip);
 
         // Отдача
@@ -82,6 +85,7 @@ public class DoomWeapon : MonoBehaviour
             recoilOffset = new Vector3(0, 0, -recoilAmount);
 
         // Raycast
+        bool hitEnemy = false;
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, range, shootableLayers))
         {
@@ -89,6 +93,7 @@ public class DoomWeapon : MonoBehaviour
             DoomHealth enemyHealth = hit.collider.GetComponent<DoomHealth>();
             if (enemyHealth != null)
             {
+                hitEnemy = true;
                 bool wasDead = enemyHealth.IsDead();
                 enemyHealth.TakeDamage(damage);
                 GameStats.AddHit();   // попадание по врагу (для точности)
@@ -97,8 +102,8 @@ public class DoomWeapon : MonoBehaviour
                 HitParticles.CreateBloodSplash(hit.point, hit.normal);
 
                 // Хитмаркер: обычный при попадании, усиленный при добивании.
-                // hitSound — кастомный звук этого оружия (если пусто, Hitmarker берёт дефолт).
-                if (enemyHealth.IsDead() && !wasDead) Hitmarker.Kill(hitSound);
+                // hit/killSound — кастомные звуки оружия (если пусто, Hitmarker берёт дефолт).
+                if (enemyHealth.IsDead() && !wasDead) Hitmarker.Kill(killSound);
                 else Hitmarker.Hit(hitSound);
             }
 
@@ -109,6 +114,11 @@ public class DoomWeapon : MonoBehaviour
                 Destroy(impact, 1f);
             }
         }
+
+        // Ближний бой: промах (не задели врага) → звук взмаха (звук1). При попадании
+        // топор ваншотит и звук убийства (звук2) играет хитмаркер — взмах не дублируем.
+        if (isMelee && !hitEnemy && shootSound != null && shootSound.clip != null)
+            shootSound.PlayOneShot(shootSound.clip);
     }
 
 }

@@ -100,10 +100,10 @@ public class Hitmarker : MonoBehaviour
         var c = kill ? killColor : hitColor;
         foreach (var img in _ticks) if (img != null) img.color = c;
 
-        // Звук: на добивании приоритет killSound; в остальном — кастомный звук оружия,
-        // а если он не задан — дефолтный hitSound хитмаркера.
+        // Звук: кастомный звук оружия (хит или килл — что передали), иначе дефолт
+        // хитмаркера (killSound на добивании, hitSound на обычном попадании).
         AudioClip clip;
-        if (kill) clip = killSound != null ? killSound : (custom != null ? custom : hitSound);
+        if (kill) clip = custom != null ? custom : (killSound != null ? killSound : hitSound);
         else      clip = custom != null ? custom : hitSound;
 
         if (_audio != null && clip != null) _audio.PlayOneShot(clip, volume);
@@ -121,7 +121,7 @@ public class Hitmarker : MonoBehaviour
     }
 
     // Статические хелперы — зовёт DoomWeapon. Если хитмаркера в сцене нет — тихо ничего.
-    // customHitSound — кастомный звук попадания оружия (пусто = дефолтный hitSound).
+    // Передаётся кастомный звук оружия (пусто = дефолтный из хитмаркера).
     public static void Hit(AudioClip customHitSound = null) { if (Instance != null) Instance.Show(false, customHitSound); }
-    public static void Kill(AudioClip customHitSound = null) { if (Instance != null) Instance.Show(true, customHitSound); }
+    public static void Kill(AudioClip customKillSound = null) { if (Instance != null) Instance.Show(true, customKillSound); }
 }
