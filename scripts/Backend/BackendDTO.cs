@@ -17,6 +17,7 @@ using System;
     public string equipped_weapon;  // активный ствол, выбранный на сайте
     public float weapon_damage;     // эффективный урон активного оружия (из админки)
     public float weapon_fire_rate;  // эффективная скорострельность (пауза между выстрелами)
+    public float weapon_range;      // дальность луча: ближний бой (топор) = маленькое значение
 }
 
 [Serializable] public class CompleteLevelResp

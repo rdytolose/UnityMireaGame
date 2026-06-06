@@ -157,6 +157,8 @@ def all_weapon_stats(db: Session) -> dict:
             "name": it.get("name", it["id"]),
             "damage": eff.get("damage", 25),
             "fire_rate": eff.get("fire_rate", 0.3),
+            "range": eff.get("range", 100),
+            "melee": bool(eff.get("melee", False)),
         }
     return out
 
