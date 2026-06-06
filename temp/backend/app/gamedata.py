@@ -16,17 +16,22 @@ ECONOMY = {
 
 # Catalog of weapons / perks the player can buy in the EquipmentShop.
 # `unlock_level` gates an item until the player reaches that level.
+# `stats.range` — дальность луча выстрела в юнитах. Дальнобойное = 100, ближний бой
+# (топор) = маленькое значение: оружие бьёт только если враг вплотную.
+# `stats.melee` — флаг ближнего боя (в игре отключает дульную вспышку).
 ITEMS = [
+    {"id": "axe",           "name": "Топор",           "type": "weapon", "price": 600,  "unlock_level": 1,
+     "stats": {"damage": 80, "fire_rate": 0.50, "range": 2.5, "melee": True}},
     {"id": "pistol",        "name": "Pistol",          "type": "weapon", "price": 0,    "unlock_level": 1,
-     "stats": {"damage": 25, "fire_rate": 0.30, "ammo": 80}},
+     "stats": {"damage": 25, "fire_rate": 0.30, "range": 100, "ammo": 80}},
     {"id": "shotgun",       "name": "Shotgun",         "type": "weapon", "price": 1500, "unlock_level": 2,
-     "stats": {"damage": 60, "fire_rate": 0.80, "ammo": 40}},
+     "stats": {"damage": 60, "fire_rate": 0.80, "range": 100, "ammo": 40}},
     {"id": "smg",           "name": "SMG",             "type": "weapon", "price": 2500, "unlock_level": 3,
-     "stats": {"damage": 18, "fire_rate": 0.08, "ammo": 200}},
+     "stats": {"damage": 18, "fire_rate": 0.08, "range": 100, "ammo": 200}},
     {"id": "rifle",         "name": "Assault Rifle",   "type": "weapon", "price": 4000, "unlock_level": 4,
-     "stats": {"damage": 35, "fire_rate": 0.12, "ammo": 150}},
+     "stats": {"damage": 35, "fire_rate": 0.12, "range": 100, "ammo": 150}},
     {"id": "rocket",        "name": "Rocket Launcher", "type": "weapon", "price": 8000, "unlock_level": 6,
-     "stats": {"damage": 150, "fire_rate": 1.20, "ammo": 12}},
+     "stats": {"damage": 150, "fire_rate": 1.20, "range": 100, "ammo": 12}},
 
     {"id": "armor",         "name": "Body Armor",      "type": "perk",   "price": 1200, "unlock_level": 1,
      "stats": {"max_health_bonus": 50}},

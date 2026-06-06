@@ -105,11 +105,13 @@
 
       <!-- Параметры оружия -->
       <div class="box">
-        <h2>Оружие (урон / скорострельность)</h2>
+        <h2>Оружие (урон / скорострельность / дальность)</h2>
         <p class="muted">Урон — за выстрел. Скорострельность — пауза между выстрелами в секундах
-          (меньше = быстрее: автомат ~0.08, пистолет ~0.3, дробовик ~0.8). Влияет на игрока со след. рейда.</p>
+          (меньше = быстрее: автомат ~0.08, пистолет ~0.3, дробовик ~0.8). Дальность — длина луча
+          в юнитах: дальнобойное ~100, ближний бой (топор) ~2.5 (бьёт только вплотную).
+          Влияет на игрока со след. рейда.</p>
         <table>
-          <thead><tr><th>Оружие</th><th>Урон</th><th>Скорострельность</th></tr></thead>
+          <thead><tr><th>Оружие</th><th>Урон</th><th>Скорострельность</th><th>Дальность</th></tr></thead>
           <tbody id="weapons"></tbody>
         </table>
         <div class="row" style="margin-top:10px">
@@ -372,9 +374,10 @@
         const it = w[id];
         const tr = document.createElement("tr");
         tr.innerHTML =
-          `<td>${it.name || id}<br><span class="muted" style="font-size:11px">${id}</span></td>
+          `<td>${it.name || id}${it.melee ? " 🪓" : ""}<br><span class="muted" style="font-size:11px">${id}</span></td>
            <td><input type="number" step="1"   data-wid="${id}" data-f="damage"    value="${it.damage}" style="width:90px"/></td>
-           <td><input type="number" step="0.01" data-wid="${id}" data-f="fire_rate" value="${it.fire_rate}" style="width:90px"/></td>`;
+           <td><input type="number" step="0.01" data-wid="${id}" data-f="fire_rate" value="${it.fire_rate}" style="width:90px"/></td>
+           <td><input type="number" step="0.5"  data-wid="${id}" data-f="range"     value="${it.range}" style="width:90px"/></td>`;
         tb.appendChild(tr);
       });
     }
@@ -384,7 +387,7 @@
         const id = inp.getAttribute("data-wid");
         const f = inp.getAttribute("data-f");
         out[id] = out[id] || {};
-        out[id][f] = f === "fire_rate" ? parseFloat(inp.value || "0") : parseInt(inp.value || "0", 10);
+        out[id][f] = (f === "fire_rate" || f === "range") ? parseFloat(inp.value || "0") : parseInt(inp.value || "0", 10);
       });
       try {
         CFG = await adm("/api/admin/config", { method: "PUT", body: { weapons: out } });

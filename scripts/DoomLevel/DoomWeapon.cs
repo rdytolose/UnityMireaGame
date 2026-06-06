@@ -6,12 +6,17 @@ public class DoomWeapon : MonoBehaviour
     public int damage = 25;
     [Tooltip("Пауза между выстрелами в секундах. Меньше = быстрее. Пистолет ~0.3, дробовик ~0.8, автомат ~0.08.")]
     public float fireRate = 0.1f;
+    [Tooltip("Дальность луча. Дальнобойное ~100, ближний бой (топор) ~2.5 — бьёт только вплотную.")]
     public float range = 100f;
+    [Tooltip("Ближний бой: без дульной вспышки и следов от пуль (взмах вместо выстрела).")]
+    public bool isMelee = false;
 
     [Header("Effects")]
     public ParticleSystem muzzleFlash;
     public GameObject impactEffect;
     public AudioSource shootSound;
+    [Tooltip("Звук попадания по врагу для этого оружия. Пусто — дефолтный из Hitmarker.")]
+    public AudioClip hitSound;
     public LayerMask shootableLayers;
 
     [Header("Recoil")]
@@ -63,8 +68,8 @@ public class DoomWeapon : MonoBehaviour
         if (weaponAnimator != null)
             weaponAnimator.SetTrigger("Shoot");
 
-        // Эффекты
-        if (muzzleFlash != null)
+        // Эффекты (у ближнего боя дульной вспышки нет — это взмах)
+        if (!isMelee && muzzleFlash != null)
             muzzleFlash.Play();
 
         // PlayOneShot наслаивает выстрелы друг на друга (не обрубает предыдущий),
@@ -92,12 +97,13 @@ public class DoomWeapon : MonoBehaviour
                 HitParticles.CreateBloodSplash(hit.point, hit.normal);
 
                 // Хитмаркер: обычный при попадании, усиленный при добивании.
-                if (enemyHealth.IsDead() && !wasDead) Hitmarker.Kill();
-                else Hitmarker.Hit();
+                // hitSound — кастомный звук этого оружия (если пусто, Hitmarker берёт дефолт).
+                if (enemyHealth.IsDead() && !wasDead) Hitmarker.Kill(hitSound);
+                else Hitmarker.Hit(hitSound);
             }
 
-            // Эффект попадания
-            if (impactEffect != null)
+            // Эффект попадания по поверхности (след от пули — не для ближнего боя)
+            if (!isMelee && impactEffect != null)
             {
                 GameObject impact = Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
                 Destroy(impact, 1f);

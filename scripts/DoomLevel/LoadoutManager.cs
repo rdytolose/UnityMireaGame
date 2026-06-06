@@ -28,11 +28,19 @@ public class LoadoutManager : MonoBehaviour
     public RuntimeAnimatorController pistolController;
     public RuntimeAnimatorController shotgunController;
     public RuntimeAnimatorController smgController;
+    public RuntimeAnimatorController axeController;   // ближний бой
 
-    [Header("Звук выстрела по стволам (опц.)")]
+    [Header("Звук выстрела/удара по стволам (опц.)")]
     public AudioClip pistolSfx;
     public AudioClip shotgunSfx;
     public AudioClip smgSfx;
+    public AudioClip axeSfx;
+
+    [Header("Звук попадания по врагу по стволам (опц., пусто → дефолт из Hitmarker)")]
+    public AudioClip pistolHitSfx;
+    public AudioClip shotgunHitSfx;
+    public AudioClip smgHitSfx;
+    public AudioClip axeHitSfx;
 
     [Header("Перки")]
     public int armorHealthBonus = 50;
@@ -50,10 +58,11 @@ public class LoadoutManager : MonoBehaviour
             string equipped = me != null && !string.IsNullOrEmpty(me.equipped_weapon)
                 ? me.equipped_weapon : "pistol";
             var owned = new HashSet<string>(me != null && me.items != null ? me.items : new string[0]);
-            // Урон/скорострельность приходят с бэка (редактируются в админке).
+            // Урон/скорострельность/дальность приходят с бэка (редактируются в админке).
             float dmg = (me != null && me.weapon_damage > 0f) ? me.weapon_damage : -1f;
             float fr = (me != null && me.weapon_fire_rate > 0f) ? me.weapon_fire_rate : -1f;
-            ApplyLoadout(equipped, owned, dmg, fr);
+            float rng = (me != null && me.weapon_range > 0f) ? me.weapon_range : -1f;
+            ApplyLoadout(equipped, owned, dmg, fr, rng);
         });
     }
 
@@ -72,21 +81,25 @@ public class LoadoutManager : MonoBehaviour
     }
 
     public void ApplyLoadout(string equippedWeapon, HashSet<string> owned,
-                             float backendDamage = -1f, float backendFireRate = -1f)
+                             float backendDamage = -1f, float backendFireRate = -1f,
+                             float backendRange = -1f)
     {
-        // Контроллер/звук — по стволу; урон/скорострельность берём с бэка (админка),
-        // а если бэк не дал (оффлайн) — дефолты по стволу.
-        RuntimeAnimatorController ctrl; AudioClip sfx;
-        int defDmg; float defFr;
+        // Контроллер/звук — по стволу; урон/скорострельность/дальность берём с бэка
+        // (админка), а если бэк не дал (оффлайн) — дефолты по стволу.
+        RuntimeAnimatorController ctrl; AudioClip sfx; AudioClip hitSfx;
+        int defDmg; float defFr; float defRange;
         switch (equippedWeapon)
         {
-            case "smg":     ctrl = smgController;     sfx = smgSfx;     defDmg = 18; defFr = 0.08f; break;
-            case "shotgun": ctrl = shotgunController; sfx = shotgunSfx; defDmg = 60; defFr = 0.80f; break;
-            default:        ctrl = pistolController;  sfx = pistolSfx;  defDmg = 25; defFr = 0.30f; break;
+            case "axe":     ctrl = axeController;     sfx = axeSfx;     hitSfx = axeHitSfx;     defDmg = 80; defFr = 0.50f; defRange = 2.5f; break;
+            case "smg":     ctrl = smgController;     sfx = smgSfx;     hitSfx = smgHitSfx;     defDmg = 18; defFr = 0.08f; defRange = 100f; break;
+            case "shotgun": ctrl = shotgunController; sfx = shotgunSfx; hitSfx = shotgunHitSfx; defDmg = 60; defFr = 0.80f; defRange = 100f; break;
+            default:        ctrl = pistolController;  sfx = pistolSfx;  hitSfx = pistolHitSfx;  defDmg = 25; defFr = 0.30f; defRange = 100f; break;
         }
         int damage = backendDamage > 0f ? Mathf.RoundToInt(backendDamage) : defDmg;
         float fireRate = backendFireRate > 0f ? backendFireRate : defFr;
-        EquipWeapon(damage, fireRate, ctrl, sfx);
+        float range = backendRange > 0f ? backendRange : defRange;
+        bool melee = equippedWeapon == "axe";
+        EquipWeapon(damage, fireRate, range, melee, ctrl, sfx, hitSfx);
         GameStats.SetWeapon(equippedWeapon);   // для итогов
 
         // ---- Перки ----
@@ -104,17 +117,23 @@ public class LoadoutManager : MonoBehaviour
 
     }
 
-    void EquipWeapon(int damage, float fireRate, RuntimeAnimatorController controller, AudioClip sfx)
+    void EquipWeapon(int damage, float fireRate, float range, bool melee,
+                     RuntimeAnimatorController controller, AudioClip sfx, AudioClip hitSfx)
     {
         if (weapon != null)
         {
             weapon.damage = damage;
             weapon.fireRate = fireRate;
+            weapon.range = range;       // ближний бой = маленькая дальность
+            weapon.isMelee = melee;     // отключает дульную вспышку/следы пуль
 
             // Звук выстрела ствола: DoomWeapon.Shoot() зовёт shootSound.Play(),
             // поэтому достаточно подменить клип у его AudioSource.
             if (weapon.shootSound != null && sfx != null)
                 weapon.shootSound.clip = sfx;
+
+            // Кастомный звук попадания по врагу. null → Hitmarker сыграет дефолтный.
+            weapon.hitSound = hitSfx;
         }
 
         // Подменяем анимацию ствола (свой Idle + Shoot). DoomWeapon.Shoot() уже дёргает
