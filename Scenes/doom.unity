@@ -1273,12 +1273,18 @@ MonoBehaviour:
   weapon: {fileID: 1677194270}
   playerHealth: {fileID: 1657384447}
   playerController: {fileID: 1657384448}
-  pistolController: {fileID: 9100000, guid: 39b59e1e873eb525bb337670c83a490b, type: 2}
+  pistolController: {fileID: 9100000, guid: 74dfa0e72cc7fa8ff8bfbd21cc183dfe, type: 2}
   shotgunController: {fileID: 9100000, guid: c61c46ba32343b2e79562c72065a9fd7, type: 2}
   smgController: {fileID: 9100000, guid: ba0094f23b3f8375785535537c3db06f, type: 2}
-  pistolSfx: {fileID: 8300000, guid: 8f25d5203b651556fa64ea062df0dc41, type: 3}
+  axeController: {fileID: 9100000, guid: 39b59e1e873eb525bb337670c83a490b, type: 2}
+  pistolSfx: {fileID: 0}
   shotgunSfx: {fileID: 0}
   smgSfx: {fileID: 0}
+  axeSfx: {fileID: 0}
+  pistolHitSfx: {fileID: 0}
+  shotgunHitSfx: {fileID: 0}
+  smgHitSfx: {fileID: 0}
+  axeHitSfx: {fileID: 0}
   armorHealthBonus: 50
   speedBootsMult: 1.25
 --- !u!4 &501349705
@@ -3996,12 +4002,18 @@ MonoBehaviour:
   weapon: {fileID: 1677194270}
   playerHealth: {fileID: 1657384447}
   playerController: {fileID: 1657384448}
-  pistolController: {fileID: 9100000, guid: 74dfa0e72cc7fa8ff8bfbd21cc183dfe, type: 2}
+  pistolController: {fileID: 9100000, guid: 39b59e1e873eb525bb337670c83a490b, type: 2}
   shotgunController: {fileID: 9100000, guid: c61c46ba32343b2e79562c72065a9fd7, type: 2}
   smgController: {fileID: 9100000, guid: ba0094f23b3f8375785535537c3db06f, type: 2}
+  axeController: {fileID: 0}
   pistolSfx: {fileID: 8300000, guid: 8f25d5203b651556fa64ea062df0dc41, type: 3}
   shotgunSfx: {fileID: 8300000, guid: 8e09e04af8fd9a2f8867b00387b22e1f, type: 3}
   smgSfx: {fileID: 8300000, guid: 4636a9232577e1cf6a340ac5a2def992, type: 3}
+  axeSfx: {fileID: 8300000, guid: b0ee5c6ca526a3c9399dff6ce77f2039, type: 3}
+  pistolHitSfx: {fileID: 0}
+  shotgunHitSfx: {fileID: 0}
+  smgHitSfx: {fileID: 0}
+  axeHitSfx: {fileID: 8300000, guid: 7548f41cb4e848cc9ac09f90ac3a58e0, type: 3}
   armorHealthBonus: 50
   speedBootsMult: 1.25
 --- !u!114 &1479532848
@@ -4540,9 +4552,11 @@ MonoBehaviour:
   damage: 25
   fireRate: 0.5
   range: 100
+  isMelee: 0
   muzzleFlash: {fileID: 0}
   impactEffect: {fileID: 7783409979048926209, guid: 45ad5594d16d3d34da2c6a181d0a4ee9, type: 3}
   shootSound: {fileID: 1677194273}
+  hitSound: {fileID: 0}
   shootableLayers:
     serializedVersion: 2
     m_Bits: 4294967295
