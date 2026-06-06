@@ -1,11 +1,10 @@
 using UnityEngine;
 
-// Простой след - quad с текстурой следа
 public class Footprint : MonoBehaviour
 {
     [Header("Fade Settings")]
-    public float fadeDelay = 5f; // Через сколько начинает исчезать
-    public float fadeDuration = 3f; // Сколько исчезает
+    public float fadeDelay = 5f;
+    public float fadeDuration = 3f;
 
     private Material material;
     private float spawnTime;
@@ -14,8 +13,7 @@ public class Footprint : MonoBehaviour
     void Start()
     {
         spawnTime = Time.time;
-        
-        // Получаем материал
+
         Renderer renderer = GetComponent<Renderer>();
         if (renderer != null)
         {
@@ -30,7 +28,6 @@ public class Footprint : MonoBehaviour
 
         float timeSinceSpawn = Time.time - spawnTime;
 
-        // Начинаем fade после задержки
         if (timeSinceSpawn > fadeDelay)
         {
             float fadeProgress = (timeSinceSpawn - fadeDelay) / fadeDuration;

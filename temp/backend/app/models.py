@@ -45,19 +45,14 @@ class PlayerState(Base):
     money = Column(Integer, default=settings.STARTING_MONEY)
     current_level = Column(Integer, default=1)
     highest_level = Column(Integer, default=1)
-    # Which companion screen the phone should show, driven by the game scene.
-    current_screen = Column(String, default="wait")  # wait | clues | shop | chat | pause
-    # Активное оружие, выбранное на сайте (один ствол). По умолчанию пистолет.
+    current_screen = Column(String, default="wait")
     equipped_weapon = Column(String, default="pistol")
-    # Накопленные приметы (id из пула CLUES через запятую). Копятся случайно по дням.
     revealed_clues = Column(String, default="")
-    # Текущий вопрос математики в чате doom (координация телефон ↔ игра).
     chat_q_id = Column(Integer, default=0)
-    chat_q_text = Column(String, default="")        # текст примера, напр. "7 + 5 = ?"
-    chat_q_options = Column(String, default="")     # варианты через запятую, напр. "12,9,15"
+    chat_q_text = Column(String, default="")
+    chat_q_options = Column(String, default="")
     chat_q_answer = Column(Integer, default=0)
-    chat_q_status = Column(String, default="idle")  # idle | pending | correct | wrong
-    # Прошёл ли игрок вступительный чат на телефоне (игра ждёт этого перед стартом doom).
+    chat_q_status = Column(String, default="idle")
     intro_done = Column(Boolean, default=False)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
@@ -90,7 +85,7 @@ class PairingSession(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     code = Column(String, unique=True, index=True, nullable=False)
-    status = Column(String, default="pending")  # pending | linked | consumed | expired
+    status = Column(String, default="pending")
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     poll_secret = Column(String, nullable=False)
     created_at = Column(DateTime, default=utcnow)

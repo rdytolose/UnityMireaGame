@@ -49,7 +49,6 @@ def _player_dict(db: Session, u: User) -> dict:
     }
 
 
-# ---- request bodies ----
 class PlayerPatch(BaseModel):
     money: int | None = None
     current_level: int | None = None
@@ -59,12 +58,12 @@ class PlayerPatch(BaseModel):
 
 class MoneyOp(BaseModel):
     amount: int
-    mode: str = "add"  # "add" | "set"
+    mode: str = "add"
 
 
 class ItemOp(BaseModel):
     item_id: str
-    action: str = "add"  # "add" | "remove"
+    action: str = "add"
 
 
 class ConfigPut(BaseModel):
@@ -75,13 +74,11 @@ class ConfigPut(BaseModel):
     weapons: dict | None = None
 
 
-# ---- auth check ----
 @router.get("/ping")
 def ping(_: bool = Depends(require_admin)):
     return {"ok": True}
 
 
-# ---- players ----
 @router.get("/players")
 def list_players(_: bool = Depends(require_admin), db: Session = Depends(get_db)):
     return {"players": [_player_dict(db, u) for u in db.query(User).order_by(User.id).all()]}
@@ -155,7 +152,6 @@ def reset_player(user_id: int, _: bool = Depends(require_admin), db: Session = D
     return _player_dict(db, u)
 
 
-# ---- config ----
 @router.get("/config")
 def get_config(_: bool = Depends(require_admin), db: Session = Depends(get_db)):
     return {

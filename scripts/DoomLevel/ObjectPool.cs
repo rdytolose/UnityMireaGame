@@ -1,18 +1,14 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-/// <summary>
-/// Универсальный пул объектов для переиспользования вместо Instantiate/Destroy.
-/// Убирает GC спайки и повышает производительность.
-/// </summary>
 public class ObjectPool : MonoBehaviour
 {
     [Header("Pool Settings")]
     public GameObject prefab;
     public int initialPoolSize = 20;
     public bool expandIfNeeded = true;
-    public int maxPoolSize = 100; // Максимальный размер пула (0 = без ограничений)
-    public Transform poolParent; // Родитель для организации в иерархии
+    public int maxPoolSize = 100;
+    public Transform poolParent;
 
     private Queue<GameObject> availableObjects = new Queue<GameObject>();
     private List<GameObject> allObjects = new List<GameObject>();
@@ -26,21 +22,16 @@ public class ObjectPool : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Инициализация пула (можно вызвать вручную до Start)
-    /// </summary>
     public void Initialize()
     {
         if (isInitialized) return;
-        
-        // Создаём родителя для организации если не назначен
+
         if (poolParent == null)
         {
             GameObject parent = new GameObject($"{prefab.name}_Pool");
             poolParent = parent.transform;
         }
 
-        // Предварительно создаём объекты
         for (int i = 0; i < initialPoolSize; i++)
         {
             CreateNewObject();
@@ -58,9 +49,6 @@ public class ObjectPool : MonoBehaviour
         return obj;
     }
 
-    /// <summary>
-    /// Получить объект из пула
-    /// </summary>
     public GameObject Get(Vector3 position, Quaternion rotation)
     {
         GameObject obj;
@@ -90,25 +78,19 @@ public class ObjectPool : MonoBehaviour
         return obj;
     }
 
-    /// <summary>
-    /// Вернуть объект в пул
-    /// </summary>
     public void Return(GameObject obj)
     {
         if (obj == null) return;
 
         obj.SetActive(false);
         obj.transform.SetParent(poolParent);
-        
+
         if (!availableObjects.Contains(obj))
         {
             availableObjects.Enqueue(obj);
         }
     }
 
-    /// <summary>
-    /// Вернуть объект в пул с задержкой
-    /// </summary>
     public void ReturnAfterDelay(GameObject obj, float delay)
     {
         if (obj != null)
@@ -123,25 +105,16 @@ public class ObjectPool : MonoBehaviour
         Return(obj);
     }
 
-    /// <summary>
-    /// Получить количество доступных объектов
-    /// </summary>
     public int GetAvailableCount()
     {
         return availableObjects.Count;
     }
 
-    /// <summary>
-    /// Получить общее количество объектов в пуле
-    /// </summary>
     public int GetTotalCount()
     {
         return allObjects.Count;
     }
 
-    /// <summary>
-    /// Очистить весь пул
-    /// </summary>
     public void Clear()
     {
         foreach (GameObject obj in allObjects)
@@ -149,7 +122,7 @@ public class ObjectPool : MonoBehaviour
             if (obj != null)
                 Destroy(obj);
         }
-        
+
         availableObjects.Clear();
         allObjects.Clear();
     }

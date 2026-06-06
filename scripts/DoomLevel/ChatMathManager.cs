@@ -3,28 +3,17 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-/// <summary>
-/// Математика во время боя. Повесь на пустой объект в сцене doom.
-///
-/// Цикл: игра просит у бэка новый пример (POST /api/chat/question) → телефон (chat.html)
-/// показывает пример и 3 варианта → игрок отвечает на телефоне → игра опрашивает
-/// /api/chat/state и реагирует:
-///   - верно   → ничего, следующий вопрос через askInterval;
-///   - неверно → урон wrongAnswerDamage;
-///   - не отвечает дольше answerGrace сек → на экране «СМОТРИ В ТЕЛЕФОН» и урон
-///     damagePerTick каждые tickInterval, пока не ответит.
-/// </summary>
 public class ChatMathManager : MonoBehaviour
 {
     [Header("Refs (находится сам, если пусто)")]
     public DoomHealth playerHealth;
 
     [Header("Тайминги")]
-    public float firstDelay = 3f;       // пауза перед первым вопросом
-    public float askInterval = 8f;      // пауза между вопросами после ответа
-    public float answerGrace = 5f;      // сколько ждать ответа без урона
-    public float tickInterval = 1f;     // как часто бить за молчание
-    public float pollInterval = 0.5f;   // как часто спрашивать бэк о результате
+    public float firstDelay = 3f;
+    public float askInterval = 8f;
+    public float answerGrace = 5f;
+    public float tickInterval = 1f;
+    public float pollInterval = 0.5f;
 
     [Header("Штрафы (HP)")]
     public int wrongAnswerDamage = 20;
@@ -64,16 +53,14 @@ public class ChatMathManager : MonoBehaviour
 
     IEnumerator AskAndWait()
     {
-        // 1) Просим бэк сгенерить новый пример (телефон его покажет).
         bool created = false;
         status = "pending";
         GameSession.ChatNewQuestion(q => { currentQid = q.id; created = true; });
 
         float t0 = Time.time;
         while (!created && Time.time - t0 < 5f) yield return null;
-        if (!created) yield break;   // бэк недоступен — выходим, попробуем на след. круге
+        if (!created) yield break;
 
-        // 2) Ждём ответа с телефона, опрашивая статус. Молчание = урон после grace.
         HideHint();
         float start = Time.time;
         float nextPoll = 0f;
@@ -103,11 +90,9 @@ public class ChatMathManager : MonoBehaviour
             yield return null;
         }
 
-        // 3) Ответ получен.
         HideHint();
         if (status == "wrong" && playerHealth != null)
             playerHealth.TakeDamage(wrongAnswerDamage);
-        // status == "correct" → без урона
     }
 
     void ShowHint() { if (hintText != null) hintText.enabled = true; }
@@ -122,7 +107,6 @@ public class ChatMathManager : MonoBehaviour
         var scaler = canvasObj.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
-        // без GraphicRaycaster — подсказка ничего не должна перехватывать
 
         var textObj = new GameObject("ChatHintText");
         textObj.transform.SetParent(canvas.transform, false);

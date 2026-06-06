@@ -1,7 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 
 
-# ---- Auth ----
 class RegisterRequest(BaseModel):
     email: EmailStr
     username: str = Field(min_length=1, max_length=40)
@@ -19,17 +18,16 @@ class TokenResponse(BaseModel):
     scope: str
 
 
-# ---- Pairing ----
 class PairStartResponse(BaseModel):
     code: str
-    qr_url: str          # URL encoded into the QR shown by the game
-    qr_png_base64: str   # ready-to-render QR image (PNG, base64) for the game
-    poll_secret: str     # secret the game uses to poll status
+    qr_url: str
+    qr_png_base64: str
+    poll_secret: str
     expires_in: int
 
 
 class PairStatusResponse(BaseModel):
-    status: str                 # pending | linked | consumed | expired
+    status: str
     game_token: str | None = None
     username: str | None = None
 
@@ -45,14 +43,13 @@ class PairQuickConfirmResponse(BaseModel):
 
 
 class ScreenRequest(BaseModel):
-    screen: str  # wait | clues | shop | chat | pause
+    screen: str
 
 
 class ScreenResponse(BaseModel):
     screen: str
 
 
-# ---- Player ----
 class PlayerStateResponse(BaseModel):
     username: str
     money: int
@@ -60,9 +57,9 @@ class PlayerStateResponse(BaseModel):
     highest_level: int
     items: list[str]
     equipped_weapon: str = "pistol"
-    weapon_damage: float = 25      # эффективный урон активного оружия (с оверрайдами админки)
-    weapon_fire_rate: float = 0.3  # эффективная скорострельность (пауза между выстрелами)
-    weapon_range: float = 100      # дальность луча: ближний бой (топор) = маленькое значение
+    weapon_damage: float = 25
+    weapon_fire_rate: float = 0.3
+    weapon_range: float = 100
 
 
 class EquipWeaponRequest(BaseModel):
@@ -70,7 +67,7 @@ class EquipWeaponRequest(BaseModel):
 
 
 class EarnRequest(BaseModel):
-    amount: int  # may be negative (penalty)
+    amount: int
 
 
 class BuyRequest(BaseModel):
@@ -88,12 +85,11 @@ class CompleteLevelResponse(BaseModel):
     next_level_config: dict | None = None
 
 
-# ---- Chat math minigame (doom) ----
 class ChatQuestionResponse(BaseModel):
-    id: int                     # 0 = вопроса нет
+    id: int
     text: str = ""
     options: list[int] = []
-    status: str = "idle"        # idle | pending | correct | wrong
+    status: str = "idle"
 
 
 class ChatAnswerRequest(BaseModel):
@@ -108,4 +104,4 @@ class ChatAnswerResponse(BaseModel):
 
 class ChatStateResponse(BaseModel):
     id: int
-    status: str                 # idle | pending | correct | wrong
+    status: str

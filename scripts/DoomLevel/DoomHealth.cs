@@ -8,27 +8,26 @@ public class DoomHealth : MonoBehaviour
     public int currentHealth = 100;
 
     [Header("Audio")]
-    public AudioSource damageSound; // Звук получения урона
-    public AudioClip[] damageSounds; // Массив звуков урона для вариации
-    public float damageVolume = 0.3f; // Громкость звука урона
-    public AudioSource deathSound; // Звук смерти
+    public AudioSource damageSound;
+    public AudioClip[] damageSounds;
+    public float damageVolume = 0.3f;
+    public AudioSource deathSound;
 
     [Header("Events")]
     public UnityEvent onDeath;
-    public UnityEvent<int> OnHealthChanged; // С большой буквы для совместимости
+    public UnityEvent<int> OnHealthChanged;
 
     [Header("Player specific")]
     public bool isPlayer = false;
     public string gameOverScene = "";
 
     [Header("Object Pooling")]
-    public bool usePooling = false; // Для врагов с пулом объектов
-    public float deathDelay = 1f; // Задержка перед возвратом в пул
+    public bool usePooling = false;
+    public float deathDelay = 1f;
 
     private bool isDead = false;
-    private ObjectPool parentPool; // Ссылка на пул
+    private ObjectPool parentPool;
 
-    // Базовое HP для безопасного масштабирования при переиспользовании из пула
     private int _baseMaxHealth;
     private bool _baseCaptured;
 
@@ -46,7 +45,6 @@ public class DoomHealth : MonoBehaviour
         currentHealth = Mathf.Max(currentHealth, 0);
         OnHealthChanged?.Invoke(currentHealth);
 
-        // Воспроизводим звук урона
         PlayDamageSound();
 
         if (currentHealth <= 0)
@@ -62,9 +60,6 @@ public class DoomHealth : MonoBehaviour
         OnHealthChanged?.Invoke(currentHealth);
     }
 
-    /// <summary>
-    /// Сбросить здоровье для переиспользования из пула
-    /// </summary>
     public void ResetHealth()
     {
         currentHealth = maxHealth;
@@ -72,20 +67,12 @@ public class DoomHealth : MonoBehaviour
         OnHealthChanged?.Invoke(currentHealth);
     }
 
-    /// <summary>
-    /// Установить пул для возврата объекта
-    /// </summary>
     public void SetPool(ObjectPool pool)
     {
         parentPool = pool;
         usePooling = true;
     }
 
-    /// <summary>
-    /// Применить множитель HP от базового значения. База запоминается один раз,
-    /// поэтому переиспользование из пула не влияет на максимум.
-    /// Вызывай до ResetHealth().
-    /// </summary>
     public void ApplyHealthMultiplier(float mult)
     {
         if (!_baseCaptured) { _baseMaxHealth = maxHealth; _baseCaptured = true; }
@@ -97,7 +84,6 @@ public class DoomHealth : MonoBehaviour
         if (isDead) return;
         isDead = true;
 
-        // Воспроизводим звук смерти
         if (deathSound != null)
             deathSound.Play();
 
@@ -105,22 +91,18 @@ public class DoomHealth : MonoBehaviour
 
         if (isPlayer)
         {
-            // Игрок умер → проигрыш, уходим на сцену итогов.
             GameStats.End(GameStats.Outcome.Lose);
         }
         else
         {
-            // Враг умер — засчитываем килл.
             GameStats.AddKill();
 
             if (usePooling && parentPool != null)
             {
-                // Возвращаем в пул через задержку
                 parentPool.ReturnAfterDelay(gameObject, deathDelay);
             }
             else
             {
-                // Уничтожаем через секунду (старый способ)
                 Destroy(gameObject, deathDelay);
             }
         }
@@ -130,7 +112,6 @@ public class DoomHealth : MonoBehaviour
     {
         if (damageSounds != null && damageSounds.Length > 0)
         {
-            // Случайный звук из массива
             AudioClip clip = damageSounds[Random.Range(0, damageSounds.Length)];
             if (damageSound != null)
             {

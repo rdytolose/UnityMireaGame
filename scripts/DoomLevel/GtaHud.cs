@@ -2,16 +2,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-/// <summary>
-/// HUD-«драйвер» в стиле GTA SA. НИЧЕГО не создаёт и не двигает сам — ты раскладываешь
-/// элементы на своём Canvas как хочешь и перетаскиваешь их в поля ниже. Скрипт только
-/// обновляет значения: полоску HP, время (сколько осталось) и деньги.
-///
-/// Голова: её рисует DoomFaceUI — просто создай свой Image, положи куда надо и назначь его
-/// в поле DoomFaceUI.faceImage (тогда DoomFaceUI не создаёт свой, а меняет спрайт у твоего).
-///
-/// Повесь на любой объект в сцене doom и заполни поля.
-/// </summary>
 public class GtaHud : MonoBehaviour
 {
     [Header("Источники (находятся сами, если пусто)")]
@@ -48,22 +38,20 @@ public class GtaHud : MonoBehaviour
 
     void Update()
     {
-        // HP
         if (hpFill != null && playerHealth != null)
         {
             int max = Mathf.Max(1, playerHealth.GetMaxHealth());
             float pct = Mathf.Clamp01((float)playerHealth.GetCurrentHealth() / max);
             if (hpFill.type == Image.Type.Filled)
-                hpFill.fillAmount = pct;                     // основной режим (Filled)
+                hpFill.fillAmount = pct;
             else
             {
-                var s = hpFill.rectTransform.localScale;     // запасной: масштаб по X (pivot слева)
+                var s = hpFill.rectTransform.localScale;
                 s.x = pct;
                 hpFill.rectTransform.localScale = s;
             }
         }
 
-        // Время (сколько осталось) — MM:SS
         if (timeText != null && timer != null)
         {
             float t = Mathf.Max(0f, timer.GetRemainingTime());

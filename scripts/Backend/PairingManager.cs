@@ -5,20 +5,15 @@ using UnityEngine.Networking;
 using TMPro;
 using UnityEngine.SceneManagement;
 
-/// <summary>
-/// Повесь на объект в самой первой сцене ("Pairing"/"Login").
-/// Показывает QR, ждёт подтверждения с телефона, сохраняет game-токен и
-/// грузит вступительную катсцену. Если токен уже есть — сразу в катсцену.
-/// </summary>
 public class PairingManager : MonoBehaviour
 {
     [Header("UI (опционально)")]
-    public RawImage qrImage;     // куда вывести картинку QR
-    public TMP_Text codeText;    // показать 6-значный код (TextMeshPro)
-    public TMP_Text statusText;  // строка статуса (TextMeshPro)
+    public RawImage qrImage;
+    public TMP_Text codeText;
+    public TMP_Text statusText;
 
     [Header("Поток")]
-    public string introSceneName = "Shop"; // стартовая сцена после пейринга (вступит. ролик удалён)
+    public string introSceneName = "Shop";
     public float pollInterval = 2f;
     public bool skipIfAlreadyPaired = true;
     [Tooltip("Ждать окончания вступительного чата на телефоне перед загрузкой сцены.")]
@@ -40,7 +35,6 @@ public class PairingManager : MonoBehaviour
     void StartPairing()
     {
         SetStatus("Подключение к серверу...");
-        // pair/start не требует токена
         GameApi.Instance.Post("/api/pair/start", "{}", (ok, body) =>
         {
             if (!ok) { SetStatus("Нет связи с сервером"); StartCoroutine(Retry()); return; }
@@ -62,7 +56,7 @@ public class PairingManager : MonoBehaviour
         byte[] png = System.Convert.FromBase64String(b64);
         var tex = new Texture2D(2, 2);
         tex.LoadImage(png);
-        tex.filterMode = FilterMode.Point; // чёткие пиксели QR
+        tex.filterMode = FilterMode.Point;
         qrImage.texture = tex;
     }
 
@@ -94,8 +88,6 @@ public class PairingManager : MonoBehaviour
             }
         }
         yield return new WaitForSeconds(0.8f);
-        // Свежий линк: ждём, пока игрок пройдёт вступительный чат на телефоне,
-        // и только потом грузим игровую сцену (иначе игра шла бы параллельно с интро).
         if (waitForPhoneIntro)
             yield return StartCoroutine(WaitIntroThenLoad());
         else
@@ -105,7 +97,6 @@ public class PairingManager : MonoBehaviour
     IEnumerator WaitIntroThenLoad()
     {
         SetStatus("Смотри в телефон — инструктаж…");
-        // Сбрасываем гейт, чтобы дождаться именно этого прохождения диалога.
         GameApi.Instance.Post("/api/gate/reset", "{}", (ok, body) => { });
         yield return new WaitForSeconds(1f);
 

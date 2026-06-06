@@ -6,7 +6,6 @@
   <title>Admin — Cashier &amp; Doom</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    /* Админке нужен широкий layout — переопределяем центрированную карточку. */
     body { display: block; align-items: stretch; padding: 24px; }
     .admin { max-width: 1100px; margin: 0 auto; }
     h2 { color: var(--accent-2); border-bottom: 1px solid var(--border); padding-bottom: 6px; }
@@ -34,7 +33,6 @@
   <div class="admin">
     <h1>🛠️ Admin <span style="color:var(--accent)">Cashier &amp; Doom</span></h1>
 
-    <!-- Логин по ключу -->
     <div class="box" id="login">
       <div class="row">
         <input id="keyInput" type="password" placeholder="Admin key" style="flex:1;min-width:200px" />
@@ -46,7 +44,6 @@
     <div id="panel">
       <div class="msg" id="msg"></div>
 
-      <!-- Игроки -->
       <div class="box">
         <h2>Игроки <button class="mini" onclick="loadPlayers()">⟳ Обновить</button></h2>
         <table>
@@ -57,7 +54,6 @@
         </table>
       </div>
 
-      <!-- Экономика -->
       <div class="box">
         <h2>Экономика</h2>
         <p class="muted">Очки за обслуживание (сервер). Минус = штраф.</p>
@@ -65,7 +61,6 @@
         <div style="margin-top:12px"><button class="mini" onclick="saveEconomy()">💾 Сохранить экономику</button></div>
       </div>
 
-      <!-- Сложность -->
       <div class="box">
         <h2>Сложность по уровням</h2>
         <p class="muted">Текущие значения (с учётом оверрайдов). Чтобы переопределить — впиши JSON ниже,
@@ -79,7 +74,6 @@
         </div>
       </div>
 
-      <!-- Матвопросы в чате doom -->
       <div class="box">
         <h2>Матвопросы в чате (doom)</h2>
         <p class="muted">Пусто → игра сама генерит арифметику. Есть вопросы → берёт случайный из списка.
@@ -91,7 +85,6 @@
         </div>
       </div>
 
-      <!-- Диалоги (чат на телефоне) -->
       <div class="box">
         <h2>Диалоги (чат на телефоне)</h2>
         <p class="muted">Одна строка = реплика пацана: <code>текст | ответ1 | ответ2</code>.
@@ -103,7 +96,6 @@
         </div>
       </div>
 
-      <!-- Параметры оружия -->
       <div class="box">
         <h2>Оружие (урон / скорострельность / дальность)</h2>
         <p class="muted">Урон — за выстрел. Скорострельность — пауза между выстрелами в секундах
@@ -127,7 +119,7 @@
     const KEY = "cd_admin_key";
     const getKey = () => localStorage.getItem(KEY) || "";
 
-    let CFG = null; // последний конфиг (items, economy, levels...)
+    let CFG = null;
 
     async function adm(path, { method = "GET", body } = {}) {
       const res = await fetch(API_BASE + path, {
@@ -157,7 +149,6 @@
       }
     }
 
-    // ---- игроки ----
     async function loadPlayers() {
       const data = await adm("/api/admin/players");
       const weapons = (CFG?.items || []).filter(i => i.type === "weapon");
@@ -217,10 +208,8 @@
       catch (e) { msg(e.message, "err"); }
     }
 
-    // ---- конфиг ----
     async function loadConfig() {
       CFG = await adm("/api/admin/config");
-      // экономика
       const eco = $("economy"); eco.innerHTML = "";
       for (const [k, v] of Object.entries(CFG.economy)) {
         const wrap = document.createElement("label");
@@ -228,15 +217,10 @@
         wrap.innerHTML = `${k}<input type="number" id="eco_${k}" value="${v}" />`;
         eco.appendChild(wrap);
       }
-      // таблица уровней
       renderLevels(CFG.levels);
-      // оверрайды
       $("overrides").value = JSON.stringify(CFG.level_overrides || {}, null, 2);
-      // матвопросы
       renderMath(CFG.math_questions || []);
-      // диалоги
       renderDialogues(CFG.dialogues || {});
-      // оружие
       renderWeapons(CFG.weapons || {});
     }
 
@@ -282,7 +266,6 @@
       await saveOverrides();
     }
 
-    // ---- матвопросы ----
     let mqCounter = 0;
     function renderMath(list) {
       $("mathList").innerHTML = "";
@@ -314,7 +297,7 @@
         const opts = [...row.querySelectorAll(".q-opt")].map(i => parseInt(i.value || "0", 10));
         const radios = [...row.querySelectorAll('input[type=radio]')];
         const ci = radios.findIndex(r => r.checked);
-        if (!text) continue; // пропускаем пустые
+        if (!text) continue;
         out.push({ text, options: opts, answer: opts[ci < 0 ? 0 : ci] });
       }
       try {
@@ -324,7 +307,6 @@
       } catch (e) { msg(e.message, "err"); }
     }
 
-    // ---- диалоги ----
     function renderDialogues(d) {
       const c = $("dialogues"); c.innerHTML = "";
       Object.keys(d || {}).forEach(key => {
@@ -367,7 +349,6 @@
       } catch (e) { msg(e.message, "err"); }
     }
 
-    // ---- оружие ----
     function renderWeapons(w) {
       const tb = $("weapons"); tb.innerHTML = "";
       Object.keys(w || {}).forEach(id => {
@@ -396,7 +377,6 @@
       } catch (e) { msg(e.message, "err"); }
     }
 
-    // автологин если ключ уже сохранён
     if (getKey()) { $("keyInput").value = getKey(); login(); }
   </script>
 </body>

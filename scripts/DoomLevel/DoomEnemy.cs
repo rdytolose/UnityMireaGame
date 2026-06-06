@@ -24,11 +24,10 @@ public class DoomEnemy : MonoBehaviour
 
     private NavMeshAgent agent;
     private DoomHealth health;
-    private DoomHealth _playerHealth;   // кэш здоровья игрока (бьём напрямую)
+    private DoomHealth _playerHealth;
     private float nextAttackTime = 0f;
     private bool isChasing = false;
 
-    // Базовые значения для безопасного масштабирования сложности
     private float _baseMove, _baseChase;
     private int _baseDmg;
     private bool _diffCaptured;
@@ -39,7 +38,6 @@ public class DoomEnemy : MonoBehaviour
         health = GetComponent<DoomHealth>();
         agent.speed = moveSpeed;
 
-        // Автопоиск игрока: сначала через PlayerManager (быстро/надёжно), потом по тегу.
         if (player == null && PlayerManager.Instance != null)
             player = PlayerManager.Instance.PlayerTransform;
         if (player == null)
@@ -49,7 +47,6 @@ public class DoomEnemy : MonoBehaviour
                 player = playerObj.transform;
         }
 
-        // Кэшируем здоровье игрока — бьём по нему напрямую (без зависимости от Player Layer).
         if (PlayerManager.Instance != null) _playerHealth = PlayerManager.Instance.PlayerHealth;
         if (_playerHealth == null && player != null)
             _playerHealth = player.GetComponentInParent<DoomHealth>() ?? player.GetComponentInChildren<DoomHealth>();
@@ -67,7 +64,6 @@ public class DoomEnemy : MonoBehaviour
 
         float distanceToPlayer = Vector3.Distance(transform.position, player.position);
 
-        // Обнаружение игрока
         if (distanceToPlayer <= detectionRange)
         {
             if (!isChasing)
@@ -76,10 +72,8 @@ public class DoomEnemy : MonoBehaviour
                 agent.speed = chaseSpeed;
             }
 
-            // Преследование
             agent.SetDestination(player.position);
 
-            // Атака
             if (distanceToPlayer <= attackRange && Time.time >= nextAttackTime)
             {
                 Attack();
@@ -96,7 +90,6 @@ public class DoomEnemy : MonoBehaviour
             }
         }
 
-        // Анимация (если есть Animator у 3D-модели)
         if (animator != null)
         {
             animator.SetBool("IsMoving", agent.velocity.magnitude > 0.1f);
@@ -109,15 +102,10 @@ public class DoomEnemy : MonoBehaviour
         if (attackSound != null)
             attackSound.Play();
 
-        // Бьём напрямую по кэшу здоровья игрока (надёжно, не зависит от Player Layer/коллайдеров).
         if (_playerHealth != null && !_playerHealth.IsDead())
             _playerHealth.TakeDamage(attackDamage);
     }
 
-    /// <summary>
-    /// Применить множители скорости и урона от базовых значений.
-    /// База запоминается один раз, поэтому переиспользование из пула не накручивает статы.
-    /// </summary>
     public void ApplyDifficulty(float speedMult, float damageMult)
     {
         if (!_diffCaptured)
@@ -135,7 +123,6 @@ public class DoomEnemy : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
-        // Визуализация радиусов в редакторе
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRange);
 

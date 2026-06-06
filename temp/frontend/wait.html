@@ -21,7 +21,6 @@
     <p class="center" id="title" style="font-size:18px; font-weight:700; margin:6px 0;">Загрузка</p>
     <p class="muted center" id="subtitle"><span class="dots"></span></p>
 
-    <!-- Pause-only controls -->
     <div id="pauseControls" class="hidden">
       <button class="primary" id="resumeBtn">Продолжить</button>
       <a href="index.html"><button class="ghost">Выйти в меню</button></a>
@@ -57,17 +56,13 @@
       $("tip").textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
     }
 
-    // The game can listen for this (e.g. via a local bridge) or simply navigate away.
     $("resumeBtn").onclick = () => {
-      // Placeholder: signal resume. Replace with your game's resume hook if needed.
       $("resumeBtn").textContent = "Возвращаемся…";
       window.history.length > 1 ? window.history.back() : (window.location.href = "index.html");
     };
 
     setMode(mode);
 
-    // Follow the game. "loading" page watches for screen != wait; "pause" page
-    // watches for screen != pause. Either way, when the game moves on, redirect.
     if (requireAuth()) {
       startScreenWatcher(mode === "pause" ? "pause" : "wait");
     }

@@ -1,6 +1,3 @@
-// Shared client logic for the Cashier & Doom site.
-// API base: same origin by default (nginx proxies /api -> backend).
-// Override by setting window.API_BASE before this script loads.
 const API_BASE = (window.API_BASE || "").replace(/\/$/, "");
 const TOKEN_KEY = "cd_site_token";
 
@@ -33,7 +30,6 @@ const Auth = {
 };
 
 const Pairing = {
-  // No-login pairing: scanning the QR creates an anonymous player and returns a token.
   quickConfirm: (code) =>
     api("/api/pair/quick-confirm", { method: "POST", body: { code } }),
 };
@@ -50,37 +46,30 @@ const State = {
 };
 
 const Chat = {
-  // Математика во время боя: телефон показывает пример, игра его создаёт и таймит.
   getQuestion: () => api("/api/chat/question", { auth: true }),
   answer: (id, choice) => api("/api/chat/answer", { method: "POST", body: { id, choice }, auth: true }),
 };
 
 const Dialogue = {
-  // Диалоги (intro / doom_to_shop): текст из админки, арифметика из пула,
-  // «гейт» — сигнал игре, что диалог пройден и можно грузить следующую сцену.
   get: (key) => api("/api/dialogue/" + encodeURIComponent(key), { auth: true }),
   questions: () => api("/api/intro/questions", { auth: true }),
   gateDone: () => api("/api/gate/done", { method: "POST", auth: true }),
 };
 
-// ---- Auto-switching companion pages -------------------------------------
-// The game reports its scene via POST /api/state/screen; each page polls
-// GET /api/state/screen and redirects itself to the matching page.
 const SCREEN_PAGE = {
   wait:  "wait.html?mode=loading",
   clues: "clues.html",
   shop:  "shop.html",
   chat:  "chat.html",
-  talk:  "story.html?key=doom_to_shop",   // переходный диалог doom→shop
+  talk:  "story.html?key=doom_to_shop",
   pause: "wait.html?mode=pause",
-  over_win:  "over.html?r=win",           // конец игры — телефон показывает исход
+  over_win:  "over.html?r=win",
   over_lose: "over.html?r=lose",
   over_quit: "over.html?r=quit",
 };
 
 function pageForScreen(s) { return SCREEN_PAGE[s] || SCREEN_PAGE.wait; }
 
-// Used right after pairing: jump to whatever screen the game is on now.
 async function goToCurrentScreen() {
   try {
     const r = await State.getScreen();
@@ -90,8 +79,6 @@ async function goToCurrentScreen() {
   }
 }
 
-// Each companion page calls this with its own screen id. When the game moves
-// to a different scene, the page auto-redirects to follow it.
 function startScreenWatcher(thisScreen) {
   setInterval(async () => {
     try {
@@ -103,7 +90,6 @@ function startScreenWatcher(thisScreen) {
   }, 2000);
 }
 
-// Redirect to the landing page if there's no token. Returns true if paired.
 function requireAuth() {
   if (!getToken()) {
     window.location.href = "index.html";
