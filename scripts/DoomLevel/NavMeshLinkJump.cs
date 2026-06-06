@@ -2,13 +2,6 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
-/// <summary>
-/// Плавное прохождение NavMesh Link / Off-Mesh Link: вместо «телепорта» агент
-/// перелетает линк по дуге (прыжок). Повесь на префаб врага (рядом с NavMeshAgent).
-///
-/// Работает и с современным NavMeshLink (AI Navigation), и со старым OffMeshLink —
-/// оба отдаются через agent.isOnOffMeshLink / currentOffMeshLinkData.
-/// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
 public class NavMeshLinkJump : MonoBehaviour
 {
@@ -23,7 +16,7 @@ public class NavMeshLinkJump : MonoBehaviour
     void Start()
     {
         _agent = GetComponent<NavMeshAgent>();
-        _agent.autoTraverseOffMeshLink = false;   // анимируем пересечение сами
+        _agent.autoTraverseOffMeshLink = false;
     }
 
     void Update()
@@ -36,7 +29,6 @@ public class NavMeshLinkJump : MonoBehaviour
     {
         _traversing = true;
 
-        // На время прыжка сами рулим transform.position, чтобы агент не перетирал дугу.
         bool prevUpdatePos = _agent.updatePosition;
         _agent.updatePosition = false;
 
@@ -55,8 +47,8 @@ public class NavMeshLinkJump : MonoBehaviour
 
         _agent.transform.position = end;
         _agent.updatePosition = prevUpdatePos;
-        _agent.Warp(end);               // ресинхронизируем внутреннюю позицию агента
-        _agent.CompleteOffMeshLink();   // вернуть управление NavMeshAgent
+        _agent.Warp(end);
+        _agent.CompleteOffMeshLink();
         _traversing = false;
     }
 }

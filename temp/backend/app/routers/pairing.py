@@ -23,7 +23,6 @@ router = APIRouter(prefix="/api/pair", tags=["pairing"])
 
 
 def _generate_code() -> str:
-    # Short, human-friendly, unambiguous code (no 0/O/1/I).
     alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
     return "".join(secrets.choice(alphabet) for _ in range(6))
 
@@ -38,7 +37,6 @@ def _qr_png_base64(data: str) -> str:
 @router.post("/start", response_model=PairStartResponse)
 def pair_start(db: Session = Depends(get_db)):
     """Called by the game (exe) at launch. Returns a code + QR to display."""
-    # Ensure a unique code.
     for _ in range(10):
         code = _generate_code()
         if not db.query(PairingSession).filter(PairingSession.code == code).first():
@@ -89,7 +87,6 @@ def pair_status(code: str, poll_secret: str, db: Session = Depends(get_db)):
     if session.status != "linked":
         return PairStatusResponse(status=session.status)
 
-    # Linked: issue the game token exactly once, then mark consumed.
     user = db.query(User).filter(User.id == session.user_id).first()
     game_token = create_token(user.id, "game", settings.GAME_TOKEN_TTL_MIN)
     session.status = "consumed"
@@ -121,7 +118,7 @@ def pair_quick_confirm(req: PairConfirmRequest, db: Session = Depends(get_db)):
         password_hash="",
     )
     db.add(user)
-    db.flush()  # assign user.id
+    db.flush()
     db.add(PlayerState(
         user_id=user.id,
         money=settings.STARTING_MONEY,

@@ -1,27 +1,15 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>
-/// Эффект старого ЭЛТ-монитора: мигание яркости (плавный шум + редкие резкие
-/// моргания) и лёгкое подрагивание картинки. Повесь на объект экрана с QR.
-///
-/// Может управлять любым набором целей одновременно (что назначишь / найдётся само):
-///   • UI Image/RawImage (QR на Canvas)  — гасит яркость цвета;
-///   • CanvasGroup                        — гасит alpha всей панели;
-///   • Renderer (квад/меш экрана)         — гасит цвет и эмиссию материала;
-///   • Light                              — мигает свет от монитора;
-///   • Transform jitterTarget             — дрожание изображения.
-/// Если поля пустые — берёт Graphic/Renderer с этого же объекта.
-/// </summary>
 [DisallowMultipleComponent]
 public class CRTScreenFlicker : MonoBehaviour
 {
     [Header("Цели (пусто — найдётся на этом объекте)")]
-    public Graphic targetGraphic;        // Image / RawImage (например, QR)
-    public CanvasGroup canvasGroup;      // вся панель экрана
-    public Renderer screenRenderer;      // меш-экран (материал)
-    public Light screenLight;            // свет от монитора
-    public Transform jitterTarget;       // что дрожит (обычно сам экран)
+    public Graphic targetGraphic;
+    public CanvasGroup canvasGroup;
+    public Renderer screenRenderer;
+    public Light screenLight;
+    public Transform jitterTarget;
 
     [Header("Мигание яркости")]
     [Tooltip("Базовая «постоянная» дрожь яркости (0..1). Чем больше — тем заметнее мерцание.")]
@@ -44,7 +32,6 @@ public class CRTScreenFlicker : MonoBehaviour
     public float jitterAmount = 0.004f;
     public float jitterSpeed = 25f;
 
-    // — внутреннее —
     Color _graphicColor;
     Color _rendererColor;
     Color _emissionColor;
@@ -54,7 +41,7 @@ public class CRTScreenFlicker : MonoBehaviour
     Vector3 _jitterBasePos;
     float _noiseSeed;
 
-    float _blinkTimer;        // сколько ещё длится текущее моргание
+    float _blinkTimer;
     float _nextBlinkAt;
     Material _mat;
 
@@ -69,7 +56,7 @@ public class CRTScreenFlicker : MonoBehaviour
         if (screenLight != null) _lightIntensity = screenLight.intensity;
         if (screenRenderer != null)
         {
-            _mat = screenRenderer.material; // инстанс — чтобы не портить общий материал
+            _mat = screenRenderer.material;
             if (_mat.HasProperty("_Color")) _rendererColor = _mat.color;
             _hasEmission = _mat.HasProperty("_EmissionColor");
             if (_hasEmission)
@@ -91,11 +78,9 @@ public class CRTScreenFlicker : MonoBehaviour
 
     void Update()
     {
-        // 1) Плавная дрожь яркости через шум Перлина (0.. -> 1-flicker..1).
         float n = Mathf.PerlinNoise(_noiseSeed, Time.time * flickerSpeed);
         float brightness = Mathf.Lerp(1f - flickerAmount, 1f, n);
 
-        // 2) Резкое моргание по таймеру.
         if (Time.time >= _nextBlinkAt)
         {
             _blinkTimer = blinkDuration;
@@ -109,7 +94,6 @@ public class CRTScreenFlicker : MonoBehaviour
 
         ApplyBrightness(Mathf.Clamp01(brightness));
 
-        // 3) Дрожание картинки.
         if (jitter && jitterTarget != null)
         {
             float jx = (Mathf.PerlinNoise(Time.time * jitterSpeed, _noiseSeed) - 0.5f) * 2f;
@@ -146,7 +130,6 @@ public class CRTScreenFlicker : MonoBehaviour
 
     void OnDisable()
     {
-        // Вернуть исходные значения, чтобы экран не остался затемнённым.
         if (targetGraphic != null) targetGraphic.color = _graphicColor;
         if (canvasGroup != null) canvasGroup.alpha = _canvasAlpha;
         if (screenLight != null) screenLight.intensity = _lightIntensity;

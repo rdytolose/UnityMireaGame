@@ -36,7 +36,6 @@
     document.getElementById("title").textContent = m.title;
     document.getElementById("sub").textContent = m.sub;
 
-    // Игра окончена — телефон отвязываем и возвращаем на стартовый экран.
     clearToken();
     setTimeout(() => { window.location.href = "index.html"; }, 4000);
   </script>

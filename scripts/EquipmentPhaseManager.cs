@@ -3,15 +3,6 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 
-/// <summary>
-/// Переходный «уровень закупки» между Shop и Doom.
-/// На экране — только надпись «магазин в телефоне» и обратный отсчёт.
-/// Покупки игрок делает в companion-приложении (бэкенд /api/shop/*),
-/// поэтому здесь геймплея нет — мы лишь говорим телефону показать shop.html
-/// (GameSession.SetScreen) и через buyDuration секунд уходим в следующую сцену.
-///
-/// Повесь этот компонент на пустой объект в сцене EquipmentShop.
-/// </summary>
 public class EquipmentPhaseManager : MonoBehaviour
 {
     [Header("Фаза закупки")]
@@ -28,7 +19,7 @@ public class EquipmentPhaseManager : MonoBehaviour
 
     [Header("UI (опционально — создастся само, если пусто)")]
     [Tooltip("Только таймер. Всё остальное (текст, деньги) — на твоём изображении сцены.")]
-    public TMP_Text timerText;   // обратный отсчёт (только числа)
+    public TMP_Text timerText;
 
     [Header("Цвета таймера")]
     public int fontSize = 48;
@@ -45,18 +36,15 @@ public class EquipmentPhaseManager : MonoBehaviour
 
     void Start()
     {
-        // Бэкенд: создаём клиент и переключаем телефон на страницу магазина.
         GameApi.Ensure();
         GameSession.SetScreen(phoneScreen);
 
-        // Гарантируем наличие SceneTransition для плавного перехода.
         if (useFadeTransition && SceneTransition.Instance == null)
         {
             var go = new GameObject("SceneTransition");
             go.AddComponent<SceneTransition>();
         }
 
-        // Тут нет геймплея — освобождаем курсор.
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
@@ -89,16 +77,15 @@ public class EquipmentPhaseManager : MonoBehaviour
     void UpdateTimer()
     {
         if (timerText == null) return;
-        int sec = Mathf.FloorToInt(remaining);                 // целые секунды
-        int cs = Mathf.FloorToInt((remaining - sec) * 100f);   // сотые (00..99)
-        timerText.text = $"{sec:00}.{cs:00}";                  // формат SS.cc, напр. 05.22
+        int sec = Mathf.FloorToInt(remaining);
+        int cs = Mathf.FloorToInt((remaining - sec) * 100f);
+        timerText.text = $"{sec:00}.{cs:00}";
 
         timerText.color = remaining <= warningTime
             ? Color.Lerp(warningColor, timerColor, Mathf.PingPong(Time.time * 2f, 1f))
             : timerColor;
     }
 
-    /// <summary>Досрочно начать рейд (повесь на кнопку или вызови из кода).</summary>
     public void StartRaidNow()
     {
         if (!running) return;
@@ -120,10 +107,6 @@ public class EquipmentPhaseManager : MonoBehaviour
             SceneManager.LoadScene(nextSceneName);
     }
 
-    /// <summary>
-    /// Создаёт безопасный оверлей-Canvas с надписями. Без GraphicRaycaster и с
-    /// raycastTarget=false — НИКОГДА не перехватывает клики/ввод.
-    /// </summary>
     void CreateUI()
     {
         var canvasObj = new GameObject("EquipmentPhaseCanvas");
@@ -134,12 +117,9 @@ public class EquipmentPhaseManager : MonoBehaviour
         var scaler = canvasObj.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
-        // GraphicRaycaster НЕ добавляем намеренно.
 
         TMP_FontAsset font = ResolveFont();
 
-        // Только таймер. Позицию по умолчанию — вверху по центру; если нужно точно
-        // над твоим изображением, создай свой TMP_Text и кинь в поле Timer Text.
         if (timerText == null)
             timerText = MakeText(canvas.transform, "TimerText", font, fontSize,
                 new Vector2(0.5f, 1f), new Vector2(0, -60), new Vector2(400, 120));

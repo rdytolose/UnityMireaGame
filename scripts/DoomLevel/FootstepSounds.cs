@@ -1,10 +1,9 @@
 using UnityEngine;
 
-// Звуки шагов по снегу
 public class FootstepSounds : MonoBehaviour
 {
     [Header("Footstep Settings")]
-    public AudioClip[] snowFootsteps; // Массив звуков шагов
+    public AudioClip[] snowFootsteps;
     public float stepDistance = 1f;
     public float volumeMin = 0.3f;
     public float volumeMax = 0.5f;
@@ -18,8 +17,8 @@ public class FootstepSounds : MonoBehaviour
     void Start()
     {
         audioSource = gameObject.AddComponent<AudioSource>();
-        audioSource.spatialBlend = 0f; // 2D звук
-        
+        audioSource.spatialBlend = 0f;
+
         characterController = GetComponent<CharacterController>();
         lastStepPosition = transform.position;
     }
@@ -33,7 +32,7 @@ public class FootstepSounds : MonoBehaviour
             return;
 
         float distance = Vector3.Distance(transform.position, lastStepPosition);
-        
+
         if (distance >= stepDistance)
         {
             PlayFootstep();

@@ -4,9 +4,9 @@ using TMPro;
 
 public class DialogUI : MonoBehaviour
 {
-    public GameObject panel;            // корень панели (включать/выключать)
-    public TMP_Text textLabel;          // текст реплики
-    public Button acknowledgeButton;    // кнопка "Понял"
+    public GameObject panel;
+    public TMP_Text textLabel;
+    public Button acknowledgeButton;
 
     [HideInInspector] public bool acknowledged = false;
 

@@ -22,7 +22,7 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
         password_hash=hash_password(req.password),
     )
     db.add(user)
-    db.flush()  # assign user.id
+    db.flush()
     db.add(PlayerState(user_id=user.id, money=settings.STARTING_MONEY, current_level=1, highest_level=1))
     db.commit()
 

@@ -4,10 +4,6 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 
-/// <summary>
-/// Тонкий HTTP-клиент к бэкенду. Singleton с DontDestroyOnLoad, поэтому
-/// корутины-запросы переживают смену сцены. Токен игры хранится в PlayerPrefs.
-/// </summary>
 public class GameApi : MonoBehaviour
 {
     public static GameApi Instance { get; private set; }
@@ -20,7 +16,6 @@ public class GameApi : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    /// <summary>Создаёт GameApi в сцене, если его ещё нет.</summary>
     public static void Ensure()
     {
         if (Instance == null)
@@ -30,7 +25,6 @@ public class GameApi : MonoBehaviour
         }
     }
 
-    // ---- Токен ----
     public static string Token
     {
         get => PlayerPrefs.GetString(TOKEN_KEY, "");
@@ -39,7 +33,6 @@ public class GameApi : MonoBehaviour
     public static bool HasToken => !string.IsNullOrEmpty(Token);
     public static void ClearToken() { PlayerPrefs.DeleteKey(TOKEN_KEY); PlayerPrefs.Save(); }
 
-    // ---- Запросы (callback: ok, тело-ответа) ----
     public void Get(string path, Action<bool, string> cb, bool auth = true)
         => StartCoroutine(Send("GET", path, null, cb, auth));
 

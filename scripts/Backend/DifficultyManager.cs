@@ -1,10 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Тянет конфиг сложности текущего уровня с бэкенда и применяет его к сцене.
-/// Положи по одному в сцену магазина (mode = Shop) и в сцену Дума (mode = Shooter).
-/// Доступ к актуальному конфигу из любого места: DifficultyManager.Current.
-/// </summary>
 public class DifficultyManager : MonoBehaviour
 {
     public enum Mode { Shooter, Shop }
@@ -13,7 +8,6 @@ public class DifficultyManager : MonoBehaviour
     public Mode mode = Mode.Shooter;
     public bool autoApply = true;
 
-    /// <summary>Последний загруженный конфиг (читают EnemySpawner и др.).</summary>
     public static LevelConfig Current;
 
     void Start()
@@ -24,7 +18,6 @@ public class DifficultyManager : MonoBehaviour
 
     public void FetchAndApply()
     {
-        // 1) узнаём текущий уровень игрока, 2) грузим его конфиг
         GameApi.Instance.Get("/api/me", (ok, body) =>
         {
             int lvl = 1;
@@ -33,7 +26,7 @@ public class DifficultyManager : MonoBehaviour
             {
                 if (!ok2) { Debug.LogWarning("[Difficulty] не удалось получить конфиг уровня"); return; }
                 Current = JsonUtility.FromJson<LevelConfig>(body2);
-                GameStats.SetLevel(Current.level);   // для итогов
+                GameStats.SetLevel(Current.level);
                 if (autoApply) Apply();
             });
         });
@@ -58,8 +51,6 @@ public class DifficultyManager : MonoBehaviour
             sp.minSpawnDelay = Current.shooter.spawn_min_delay;
             sp.maxSpawnDelay = Current.shooter.spawn_max_delay;
         }
-        // Здоровье/скорость/урон врагов масштабируются в EnemySpawner при спавне
-        // (см. EnemySpawner.ApplyDifficultyToEnemy) — это безопасно для пула.
     }
 
     void ApplyShop()

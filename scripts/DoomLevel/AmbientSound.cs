@@ -1,11 +1,10 @@
 using UnityEngine;
 
-// Фоновый ambient звук для всей сцены
 public class AmbientSound : MonoBehaviour
 {
     [Header("Ambient Settings")]
-    public AudioClip ambientClip; // Основной ambient звук
-    public float volume = 0.3f; // Громкость (тише чем другие звуки)
+    public AudioClip ambientClip;
+    public float volume = 0.3f;
     public bool loop = true;
     public bool playOnStart = true;
 
@@ -14,9 +13,9 @@ public class AmbientSound : MonoBehaviour
     public float fadeInDuration = 2f;
 
     [Header("Additional Layers")]
-    public AudioClip windSound; // Звук ветра
+    public AudioClip windSound;
     public float windVolume = 0.2f;
-    public AudioClip distantSounds; // Далекие звуки (вороны, скрип и т.д.)
+    public AudioClip distantSounds;
     public float distantVolume = 0.15f;
 
     private AudioSource mainAmbient;
@@ -27,12 +26,11 @@ public class AmbientSound : MonoBehaviour
 
     void Start()
     {
-        // Создаем основной ambient
         mainAmbient = gameObject.AddComponent<AudioSource>();
         mainAmbient.clip = ambientClip;
         mainAmbient.loop = loop;
-        mainAmbient.spatialBlend = 0f; // 2D звук (везде одинаково)
-        mainAmbient.priority = 0; // Высокий приоритет
+        mainAmbient.spatialBlend = 0f;
+        mainAmbient.priority = 0;
         targetVolume = volume;
 
         if (fadeIn)
@@ -49,7 +47,6 @@ public class AmbientSound : MonoBehaviour
             mainAmbient.Play();
         }
 
-        // Создаем слой ветра
         if (windSound != null)
         {
             windAmbient = gameObject.AddComponent<AudioSource>();
@@ -60,7 +57,6 @@ public class AmbientSound : MonoBehaviour
             windAmbient.Play();
         }
 
-        // Создаем слой далеких звуков
         if (distantSounds != null)
         {
             distantAmbient = gameObject.AddComponent<AudioSource>();
@@ -74,7 +70,6 @@ public class AmbientSound : MonoBehaviour
 
     void Update()
     {
-        // Fade in эффект
         if (fadeIn && currentFadeTime < fadeInDuration)
         {
             currentFadeTime += Time.deltaTime;
@@ -91,7 +86,6 @@ public class AmbientSound : MonoBehaviour
         }
     }
 
-    // Публичные методы для управления
     public void SetVolume(float newVolume)
     {
         volume = newVolume;

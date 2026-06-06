@@ -1,13 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>
-/// Хитмаркер в стиле шутеров: при попадании по врагу в центре экрана вспыхивает «✕»
-/// (с поп-анимацией) и играет короткий «тук». На добивании — усиленный маркер и свой звук.
-///
-/// Повесь на любой объект в сцене doom и назначь звуки. UI создаётся сам.
-/// DoomWeapon дёргает Hitmarker.Hit() / Hitmarker.Kill() автоматически.
-/// </summary>
 public class Hitmarker : MonoBehaviour
 {
     public static Hitmarker Instance;
@@ -20,13 +13,13 @@ public class Hitmarker : MonoBehaviour
     [Header("Вид")]
     public Color hitColor = Color.white;
     public Color killColor = new Color(1f, 0.3f, 0.3f);
-    public float tickLength = 16f;   // длина штриха
-    public float gap = 7f;           // отступ от центра
-    public float thickness = 3f;     // толщина штриха
+    public float tickLength = 16f;
+    public float gap = 7f;
+    public float thickness = 3f;
 
     [Header("Анимация")]
-    public float duration = 0.18f;   // сколько висит/гаснет
-    public float popScale = 1.5f;    // во сколько раз «прыгает» в начале
+    public float duration = 0.18f;
+    public float popScale = 1.5f;
 
     CanvasGroup _group;
     RectTransform _root;
@@ -41,7 +34,7 @@ public class Hitmarker : MonoBehaviour
 
         _audio = gameObject.AddComponent<AudioSource>();
         _audio.playOnAwake = false;
-        _audio.spatialBlend = 0f; // 2D
+        _audio.spatialBlend = 0f;
 
         Build();
     }
@@ -58,7 +51,6 @@ public class Hitmarker : MonoBehaviour
         var scaler = canvasObj.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
-        // GraphicRaycaster не нужен — маркер кликов не ловит.
 
         var rootObj = new GameObject("Hitmarker");
         rootObj.transform.SetParent(canvas.transform, false);
@@ -71,12 +63,11 @@ public class Hitmarker : MonoBehaviour
         _group.interactable = false;
         _group.blocksRaycasts = false;
 
-        // 4 диагональных штриха — классический «✕» с разрывом по центру.
         _ticks = new Image[4];
-        _ticks[0] = MakeTick(new Vector2(1f, 1f), 45f);    // NE  "/"
-        _ticks[1] = MakeTick(new Vector2(-1f, 1f), -45f);  // NW  "\"
-        _ticks[2] = MakeTick(new Vector2(-1f, -1f), 45f);  // SW  "/"
-        _ticks[3] = MakeTick(new Vector2(1f, -1f), -45f);  // SE  "\"
+        _ticks[0] = MakeTick(new Vector2(1f, 1f), 45f);
+        _ticks[1] = MakeTick(new Vector2(-1f, 1f), -45f);
+        _ticks[2] = MakeTick(new Vector2(-1f, -1f), 45f);
+        _ticks[3] = MakeTick(new Vector2(1f, -1f), -45f);
     }
 
     Image MakeTick(Vector2 dir, float rotZ)
@@ -100,8 +91,6 @@ public class Hitmarker : MonoBehaviour
         var c = kill ? killColor : hitColor;
         foreach (var img in _ticks) if (img != null) img.color = c;
 
-        // Звук: кастомный звук оружия (хит или килл — что передали), иначе дефолт
-        // хитмаркера (killSound на добивании, hitSound на обычном попадании).
         AudioClip clip;
         if (kill) clip = custom != null ? custom : (killSound != null ? killSound : hitSound);
         else      clip = custom != null ? custom : hitSound;
@@ -120,8 +109,6 @@ public class Hitmarker : MonoBehaviour
         _root.localScale = new Vector3(sc, sc, 1f);
     }
 
-    // Статические хелперы — зовёт DoomWeapon. Если хитмаркера в сцене нет — тихо ничего.
-    // Передаётся кастомный звук оружия (пусто = дефолтный из хитмаркера).
     public static void Hit(AudioClip customHitSound = null) { if (Instance != null) Instance.Show(false, customHitSound); }
     public static void Kill(AudioClip customKillSound = null) { if (Instance != null) Instance.Show(true, customKillSound); }
 }

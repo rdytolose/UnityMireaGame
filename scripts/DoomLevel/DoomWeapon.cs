@@ -38,10 +38,10 @@ public class DoomWeapon : MonoBehaviour
     {
         if (playerCamera == null)
             playerCamera = Camera.main;
-        
+
         if (weaponModel != null)
             originalPosition = weaponModel.localPosition;
-        
+
         if (weaponAnimator == null)
             weaponAnimator = GetComponent<Animator>();
     }
@@ -54,7 +54,6 @@ public class DoomWeapon : MonoBehaviour
             nextFireTime = Time.time + fireRate;
         }
 
-        // Плавный возврат после отдачи
         if (weaponModel != null)
         {
             recoilOffset = Vector3.Lerp(recoilOffset, Vector3.zero, Time.deltaTime * recoilSpeed);
@@ -64,50 +63,38 @@ public class DoomWeapon : MonoBehaviour
 
     void Shoot()
     {
-        GameStats.AddShot();   // для статистики/точности
+        GameStats.AddShot();
 
-        // Анимация стрельбы
         if (weaponAnimator != null)
             weaponAnimator.SetTrigger("Shoot");
 
-        // Эффекты (у ближнего боя дульной вспышки нет — это взмах)
         if (!isMelee && muzzleFlash != null)
             muzzleFlash.Play();
 
-        // Дальнобойное: звук выстрела играет всегда. Ближний бой: звук взмаха играем
-        // только на ПРОМАХЕ (ниже), чтобы при убийстве звучал лишь килл-звук.
-        // PlayOneShot наслаивает звуки (не обрубает предыдущий) — автомат звучит ровно.
         if (!isMelee && shootSound != null && shootSound.clip != null)
             shootSound.PlayOneShot(shootSound.clip);
 
-        // Отдача
         if (weaponModel != null)
             recoilOffset = new Vector3(0, 0, -recoilAmount);
 
-        // Raycast
         bool hitEnemy = false;
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, range, shootableLayers))
         {
-            // Урон врагу
             DoomHealth enemyHealth = hit.collider.GetComponent<DoomHealth>();
             if (enemyHealth != null)
             {
                 hitEnemy = true;
                 bool wasDead = enemyHealth.IsDead();
                 enemyHealth.TakeDamage(damage);
-                GameStats.AddHit();   // попадание по врагу (для точности)
+                GameStats.AddHit();
 
-                // Партиклы крови при попадании по врагу
                 HitParticles.CreateBloodSplash(hit.point, hit.normal);
 
-                // Хитмаркер: обычный при попадании, усиленный при добивании.
-                // hit/killSound — кастомные звуки оружия (если пусто, Hitmarker берёт дефолт).
                 if (enemyHealth.IsDead() && !wasDead) Hitmarker.Kill(killSound);
                 else Hitmarker.Hit(hitSound);
             }
 
-            // Эффект попадания по поверхности (след от пули — не для ближнего боя)
             if (!isMelee && impactEffect != null)
             {
                 GameObject impact = Instantiate(impactEffect, hit.point, Quaternion.LookRotation(hit.normal));
@@ -115,8 +102,6 @@ public class DoomWeapon : MonoBehaviour
             }
         }
 
-        // Ближний бой: промах (не задели врага) → звук взмаха (звук1). При попадании
-        // топор ваншотит и звук убийства (звук2) играет хитмаркер — взмах не дублируем.
         if (isMelee && !hitEnemy && shootSound != null && shootSound.clip != null)
             shootSound.PlayOneShot(shootSound.clip);
     }

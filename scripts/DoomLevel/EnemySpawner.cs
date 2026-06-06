@@ -1,24 +1,23 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-// Спавнит врагов в случайных точках через случайные интервалы
 public class EnemySpawner : MonoBehaviour
 {
     [Header("Spawn Settings")]
-    public GameObject enemyPrefab; // Префаб врага
-    public int maxEnemies = 10; // Максимум врагов одновременно
-    public float minSpawnDelay = 5f; // Минимальная задержка между спавнами
-    public float maxSpawnDelay = 15f; // Максимальная задержка
+    public GameObject enemyPrefab;
+    public int maxEnemies = 10;
+    public float minSpawnDelay = 5f;
+    public float maxSpawnDelay = 15f;
 
     [Header("Object Pooling")]
-    public bool useObjectPooling = true; // Использовать пул объектов
-    public int poolSize = 20; // Размер пула
+    public bool useObjectPooling = true;
+    public int poolSize = 20;
 
     [Header("Spawn Points")]
-    public Transform[] spawnPoints; // Точки спавна
-    public bool useRandomPositions = false; // Или случайные позиции в радиусе
-    public float spawnRadius = 20f; // Радиус случайного спавна
-    public float minDistanceFromPlayer = 10f; // Минимальное расстояние от игрока
+    public Transform[] spawnPoints;
+    public bool useRandomPositions = false;
+    public float spawnRadius = 20f;
+    public float minDistanceFromPlayer = 10f;
 
     [Header("Spawn Area (если useRandomPositions)")]
     public Vector3 spawnAreaCenter = Vector3.zero;
@@ -30,18 +29,16 @@ public class EnemySpawner : MonoBehaviour
     private List<GameObject> spawnedEnemies = new List<GameObject>();
     private float nextSpawnTime;
     private float cleanupTimer = 0f;
-    private const float CLEANUP_INTERVAL = 2f; // Очистка раз в 2 секунды
-    private ObjectPool enemyPool; // Пул врагов
+    private const float CLEANUP_INTERVAL = 2f;
+    private ObjectPool enemyPool;
 
     void Start()
     {
-        // Используем PlayerManager вместо медленного FindGameObjectWithTag
         if (player == null && PlayerManager.Instance != null)
         {
             player = PlayerManager.Instance.PlayerTransform;
         }
 
-        // Создаём пул объектов если включен
         if (useObjectPooling && enemyPrefab != null)
         {
             GameObject poolObj = new GameObject("EnemyPool");
@@ -50,20 +47,17 @@ public class EnemySpawner : MonoBehaviour
             enemyPool.prefab = enemyPrefab;
             enemyPool.initialPoolSize = poolSize;
             enemyPool.expandIfNeeded = true;
-            enemyPool.maxPoolSize = poolSize * 3; // Максимум в 3 раза больше начального
+            enemyPool.maxPoolSize = poolSize * 3;
 
-            // ВАЖНО: Инициализируем пул вручную сразу
             enemyPool.Initialize();
 
         }
 
-        // Планируем первый спавн
         ScheduleNextSpawn();
     }
 
     void Update()
     {
-        // Удаляем мертвых врагов из списка (оптимизировано - не каждый кадр)
         cleanupTimer += Time.deltaTime;
         if (cleanupTimer >= CLEANUP_INTERVAL)
         {
@@ -71,7 +65,6 @@ public class EnemySpawner : MonoBehaviour
             CleanupDeadEnemies();
         }
 
-        // Проверяем, пора ли спавнить нового врага
         if (Time.time >= nextSpawnTime && spawnedEnemies.Count < maxEnemies)
         {
             SpawnEnemy();
@@ -89,7 +82,6 @@ public class EnemySpawner : MonoBehaviour
 
         Vector3 spawnPosition = GetSpawnPosition();
 
-        // Проверяем расстояние от игрока (оптимизация: sqrMagnitude вместо Distance)
         if (player != null)
         {
             float sqrDistance = (spawnPosition - player.position).sqrMagnitude;
@@ -97,24 +89,21 @@ public class EnemySpawner : MonoBehaviour
 
             if (sqrDistance < minDistanceSqr)
             {
-                // Слишком близко к игроку, пробуем еще раз позже
-                ScheduleNextSpawn(1f); // Попробуем через 1 секунду
+                ScheduleNextSpawn(1f);
                 return;
             }
         }
 
-        // Спавним врага через пул или обычным способом
         GameObject enemy;
         if (useObjectPooling && enemyPool != null)
         {
             enemy = enemyPool.Get(spawnPosition, Quaternion.identity);
 
-            // Сбрасываем состояние врага
             DoomHealth health = enemy.GetComponent<DoomHealth>();
             if (health != null)
             {
                 health.ResetHealth();
-                health.SetPool(enemyPool); // Связываем с пулом для возврата
+                health.SetPool(enemyPool);
             }
         }
         else
@@ -123,14 +112,10 @@ public class EnemySpawner : MonoBehaviour
         }
 
         spawnedEnemies.Add(enemy);
-        ApplyDifficultyToEnemy(enemy);   // масштабируем под текущий уровень
+        ApplyDifficultyToEnemy(enemy);
 
     }
 
-    /// <summary>
-    /// Применяет настройки сложности из DifficultyManager.Current к заспавненному врагу.
-    /// Безопасно для пула: HP/скорость/урон считаются от базы.
-    /// </summary>
     void ApplyDifficultyToEnemy(GameObject enemy)
     {
         var cfg = DifficultyManager.Current;
@@ -152,14 +137,12 @@ public class EnemySpawner : MonoBehaviour
     {
         if (useRandomPositions)
         {
-            // Случайная позиция в заданной области
             Vector3 randomPos = spawnAreaCenter + new Vector3(
                 Random.Range(-spawnAreaSize.x / 2, spawnAreaSize.x / 2),
                 0,
                 Random.Range(-spawnAreaSize.z / 2, spawnAreaSize.z / 2)
             );
 
-            // Raycast вниз чтобы найти землю
             if (Physics.Raycast(randomPos + Vector3.up * 10f, Vector3.down, out RaycastHit hit, 20f))
             {
                 return hit.point + Vector3.up * 0.5f;
@@ -169,7 +152,6 @@ public class EnemySpawner : MonoBehaviour
         }
         else
         {
-            // Используем заданные точки спавна
             if (spawnPoints != null && spawnPoints.Length > 0)
             {
                 Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
@@ -191,8 +173,6 @@ public class EnemySpawner : MonoBehaviour
 
     void CleanupDeadEnemies()
     {
-        // Оптимизированная очистка без лямбда-выражений
-        // Удаляем null объекты и неактивных врагов (вернувшихся в пул)
         for (int i = spawnedEnemies.Count - 1; i >= 0; i--)
         {
             if (spawnedEnemies[i] == null || !spawnedEnemies[i].activeInHierarchy)
@@ -200,17 +180,14 @@ public class EnemySpawner : MonoBehaviour
         }
     }
 
-    // Визуализация в редакторе
     void OnDrawGizmos()
     {
-        // Рисуем область спавна
         if (useRandomPositions)
         {
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireCube(spawnAreaCenter, spawnAreaSize);
         }
 
-        // Рисуем точки спавна
         if (spawnPoints != null)
         {
             Gizmos.color = Color.red;
@@ -224,7 +201,6 @@ public class EnemySpawner : MonoBehaviour
             }
         }
 
-        // Рисуем минимальное расстояние от игрока
         if (player != null)
         {
             Gizmos.color = Color.blue;
@@ -232,7 +208,6 @@ public class EnemySpawner : MonoBehaviour
         }
     }
 
-    // Публичные методы для управления
     public void StopSpawning()
     {
         nextSpawnTime = float.MaxValue;

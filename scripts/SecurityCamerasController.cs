@@ -36,12 +36,10 @@ public class SecurityCamerasController : MonoBehaviour
 
     void Awake()
     {
-        // Автопоиск игровых скриптов
         if (mouseLook == null) mouseLook = Object.FindFirstObjectByType<MouseLook>();
         if (playerMovement == null) playerMovement = Object.FindFirstObjectByType<PlayerMovement>();
         if (playerInteraction == null) playerInteraction = Object.FindFirstObjectByType<PlayerInteraction>();
 
-        // Render Textures и привязка к камерам
         renderTextures = new RenderTexture[securityCameras.Length];
         for (int i = 0; i < securityCameras.Length; i++)
         {
@@ -57,7 +55,6 @@ public class SecurityCamerasController : MonoBehaviour
             securityCameras[i].enabled = false;
         }
 
-        // Текстура помех
         noiseTexture = new Texture2D(noiseSize, noiseSize, TextureFormat.R8, false);
         noiseTexture.filterMode = FilterMode.Point;
         noiseTexture.wrapMode = TextureWrapMode.Repeat;
@@ -69,7 +66,6 @@ public class SecurityCamerasController : MonoBehaviour
             staticOverlay.gameObject.SetActive(false);
         }
 
-        // Привязка кнопок + диагностика
         for (int i = 0; i < cameraButtons.Length; i++)
         {
             if (cameraButtons[i] == null)
@@ -91,7 +87,6 @@ public class SecurityCamerasController : MonoBehaviour
     {
         if (PauseMenuManager.IsPaused) return;
 
-        // Принудительно держим курсор разблокированным, пока панель открыта
         if (panelOpen)
         {
             Cursor.lockState = CursorLockMode.None;

@@ -41,17 +41,14 @@
   <script src="config.js"></script>
   <script src="app.js"></script>
   <script>
-    // Текст диалога теперь редактируется в АДМИНКЕ (/admin.html) и тянется с бэка.
-    // key берётся из URL: story.html?key=intro (после линка) | ?key=doom_to_shop (переход).
     const KEY = getQueryParam("key") || "intro";
     const WHO = "Пацан";
 
     const $ = (id) => document.getElementById(id);
     let i = 0;
-    let STORY = [];       // узлы диалога (с бэка)
-    let mathQueue = [];   // арифметические вопросы из пула (для маркеров "MATH")
+    let STORY = [];
+    let mathQueue = [];
 
-    // Без токена тут делать нечего — на главную.
     if (!getToken()) location.href = "index.html";
     $("who").textContent = WHO;
 
@@ -88,9 +85,8 @@
       if (i >= STORY.length) { finish(); return; }
       let node = STORY[i];
 
-      // Маркер "MATH" → подставляем арифметический вопрос из очереди.
       if (node === "MATH") {
-        if (mathQueue.length === 0) { i++; showNode(); return; }  // пул кончился — пропускаем
+        if (mathQueue.length === 0) { i++; showNode(); return; }
         const q = mathQueue.shift();
         typeThen(() => {
           bubble(q.text, "them");
@@ -99,7 +95,6 @@
         return;
       }
 
-      // Обычная реплика пацана.
       typeThen(() => {
         bubble(node.text, "them");
         setAnswers(node.a || ["Дальше"], (ans) => advance(ans));
@@ -107,7 +102,7 @@
     }
 
     function advance(chosenLabel) {
-      if (chosenLabel) bubble(chosenLabel, "me");  // твой выбор (ни на что не влияет)
+      if (chosenLabel) bubble(chosenLabel, "me");
       $("answers").innerHTML = "";
       i++;
       setTimeout(showNode, 350);
@@ -115,7 +110,6 @@
 
     async function finish() {
       $("answers").innerHTML = "";
-      // Сообщаем бэку: диалог пройден → игра грузит следующую сцену (doom или shop).
       try { await Dialogue.gateDone(); } catch (_) {}
       const btn = document.createElement("button");
       btn.className = "primary";
@@ -125,9 +119,8 @@
       leave();
     }
 
-    // Уходим со страницы, как только игра сменит сцену (экран != talk).
     async function leave() {
-      for (let n = 0; n < 30; n++) {            // ~30с максимум
+      for (let n = 0; n < 30; n++) {
         try {
           const r = await State.getScreen();
           if (r.screen && r.screen !== "talk") { window.location.href = pageForScreen(r.screen); return; }
@@ -137,7 +130,6 @@
       goToCurrentScreen();
     }
 
-    // Тянем текст диалога (из админки) + арифметику, затем запускаем.
     (async () => {
       try {
         const d = await Dialogue.get(KEY);
@@ -147,7 +139,7 @@
         const r = await Dialogue.questions();
         mathQueue = (r && r.questions) ? r.questions : [];
       } catch (_) { mathQueue = []; }
-      if (STORY.length === 0) { finish(); return; }  // пустой диалог — сразу дальше
+      if (STORY.length === 0) { finish(); return; }
       showNode();
     })();
   </script>

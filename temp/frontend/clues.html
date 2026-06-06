@@ -56,9 +56,7 @@
 
     if (requireAuth()) {
       load();
-      // Refresh periodically so it stays in sync as the level changes.
       setInterval(load, 15000);
-      // Follow the game: leave this page if the scene changes.
       startScreenWatcher("clues");
     }
   </script>

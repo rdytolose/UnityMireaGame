@@ -14,9 +14,9 @@ public class FeedbackFX : MonoBehaviour
     public float flashFadeOut = 0.22f;
 
     [Header("Camera shake")]
-    public Transform cameraTransform;        // обычно main camera transform
+    public Transform cameraTransform;
     public float shakeDuration = 0.12f;
-    public float shakeAmplitude = 0.06f;     // в метрах/юнитах (маленькое число!)
+    public float shakeAmplitude = 0.06f;
     public float shakeFrequency = 22f;
 
     [Header("Sounds")]
@@ -46,7 +46,6 @@ public class FeedbackFX : MonoBehaviour
 
         if (sfxSource == null)
         {
-            // можно оставить null и назначить вручную, но авто-создание удобно
             sfxSource = GetComponent<AudioSource>();
             if (sfxSource == null) sfxSource = gameObject.AddComponent<AudioSource>();
             sfxSource.playOnAwake = false;
@@ -82,7 +81,6 @@ public class FeedbackFX : MonoBehaviour
 
     IEnumerator FlashRoutine(Color color)
     {
-        // fade in
         float t = 0f;
         while (t < flashFadeIn)
         {
@@ -93,10 +91,8 @@ public class FeedbackFX : MonoBehaviour
         }
         SetOverlay(color, flashAlpha);
 
-        // hold
         if (flashHold > 0f) yield return new WaitForSecondsRealtime(flashHold);
 
-        // fade out
         t = 0f;
         while (t < flashFadeOut)
         {
@@ -120,7 +116,6 @@ public class FeedbackFX : MonoBehaviour
     {
         if (cameraTransform == null) return;
 
-        // сохраняем локальную позицию камеры (важно: трясём локально)
         if (!camPosSaved)
         {
             camLocalStartPos = cameraTransform.localPosition;

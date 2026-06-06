@@ -61,7 +61,6 @@
 
         let action;
         if (it.owned && it.type === "weapon") {
-          // У оружия — выбор активного ствола (владеешь многими, активен один).
           action = (it.id === equipped)
             ? '<span class="badge-owned">✓ Экипировано</span>'
             : `<button data-equip="${it.id}">Экипировать</button>`;
@@ -118,7 +117,7 @@
 
     if (requireAuth()) {
       load();
-      startScreenWatcher("shop");   // follow the game: leave when scene changes
+      startScreenWatcher("shop");
     }
   </script>
 </body>
