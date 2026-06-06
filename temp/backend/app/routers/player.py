@@ -56,6 +56,7 @@ def _state_response(db: Session, user: User) -> PlayerStateResponse:
         equipped_weapon=equipped,
         weapon_damage=float(stats.get("damage", 25)),
         weapon_fire_rate=float(stats.get("fire_rate", 0.3)),
+        weapon_range=float(stats.get("range", 100)),
     )
 
 

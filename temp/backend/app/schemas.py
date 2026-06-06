@@ -62,6 +62,7 @@ class PlayerStateResponse(BaseModel):
     equipped_weapon: str = "pistol"
     weapon_damage: float = 25      # эффективный урон активного оружия (с оверрайдами админки)
     weapon_fire_rate: float = 0.3  # эффективная скорострельность (пауза между выстрелами)
+    weapon_range: float = 100      # дальность луча: ближний бой (топор) = маленькое значение
 
 
 class EquipWeaponRequest(BaseModel):
