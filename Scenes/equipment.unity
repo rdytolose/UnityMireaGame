@@ -353,7 +353,7 @@ MonoBehaviour:
   timerColor: {r: 1, g: 1, b: 1, a: 1}
   warningColor: {r: 1, g: 0, b: 0, a: 1}
   warningTime: 10
-  skipKey: 0
+  skipKey: 32
 --- !u!4 &893883921
 Transform:
   m_ObjectHideFlags: 0
